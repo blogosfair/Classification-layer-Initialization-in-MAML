@@ -1,443 +1,247 @@
 ---
 layout: distill
-title: Sample Blog Post
-description: Your blog post's abstract.
-  This is an example of a distill-style blog post and the main elements it supports.
+title: Strategies for Classification Layer Initialization in Model-Agnostic Meta-Learning
+description: [Your blog's abstract - a short description of what your blog is about]
 date: 2022-12-01
 htmlwidgets: true
 
-# Anonymize when submitting
-# authors:
-#   - name: Anonymous
-
+# anonymize when submitting 
 authors:
-  - name: Albert Einstein
-    url: "https://en.wikipedia.org/wiki/Albert_Einstein"
-    affiliations:
-      name: IAS, Princeton
-  - name: Boris Podolsky
-    url: "https://en.wikipedia.org/wiki/Boris_Podolsky"
-    affiliations:
-      name: IAS, Princeton
-  - name: Nathan Rosen
-    url: "https://en.wikipedia.org/wiki/Nathan_Rosen"
-    affiliations:
-      name: IAS, Princeton
+  - name: Anonymous 
+
+# do not fill this in until your post is accepted and you're publishing your camera-ready post!
+# authors:
+#   - name: Albert Einstein
+#     url: "https://en.wikipedia.org/wiki/Albert_Einstein"
+#     affiliations:
+#       name: IAS, Princeton
+#   - name: Boris Podolsky
+#     url: "https://en.wikipedia.org/wiki/Boris_Podolsky"
+#     affiliations:
+#       name: IAS, Princeton
+#   - name: Nathan Rosen
+#     url: "https://en.wikipedia.org/wiki/Nathan_Rosen"
+#     affiliations:
+#       name: IAS, Princeton 
 
 # must be the exact same name as your blogpost
-bibliography: 2022-12-01-distill-example.bib  
+bibliography: 2022-12-01-classification-layer-initialization-in-maml.bib  
 
 # Add a table of contents to your post.
 #   - make sure that TOC names match the actual section names
 #     for hyperlinks within the post to work correctly.
 toc:
-  - name: Equations
-  - name: Images and Figures
-    subsections:
-    - name: Interactive Figures
-  - name: Citations
-  - name: Footnotes
-  - name: Code Blocks
-  - name: Layouts
-  - name: Other Typography?
-
-# Below is an example of injecting additional post-specific styles.
-# This is used in the 'Layouts' section of this post.
-# If you use this post as a template, delete this _styles block.
-_styles: >
-  .fake-img {
-    background: #bbb;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    box-shadow: 0 0px 4px rgba(0, 0, 0, 0.1);
-    margin-bottom: 12px;
-  }
-  .fake-img p {
-    font-family: monospace;
-    color: white;
-    text-align: left;
-    margin: 12px 0;
-    text-align: center;
-    font-size: 16px;
-  }
+  - name: Introduction
+  - name: Quick recap on MAML
+  - name: Learning a single initialization vector
+  - name: Zero initialization
+  - name: MAMLs SCL Intuition
+  - name: Initialization using prototypes
+  - name: What else is there?
+  - name: Conclusion & Discussion
 ---
 
-## Equations
 
-This theme supports rendering beautiful math in inline and display modes using [MathJax 3](https://www.mathjax.org/) engine.
-You just need to surround your math expression with `$$`, like `$$ E = mc^2 $$`.
-If you leave it inside a paragraph, it will produce an inline expression, just like $$ E = mc^2 $$.
+## Introduction
+In a previous study, [Raghu et al. [2020]](#Raghu) found that in model-agnostic meta-learning (MAML) for few-shot classification, nearly all change observed in the network during the inner loop fine-tuning occurs in the linear classification head. The common interpretation is, that the linear head remaps encoded features to the new tasks classes in this phase. In classical MAML, the final linear layer weights are meta-learned as usual. There are problems to this approach though:
 
-To use display mode, again surround your expression with `$$` and place it as a separate paragraph.
-Here is an example:
+First, it is hard to imagine that a single set of optimal weights can be learned. This becomes evident, when looking at class label permutations: Two different tasks can consist of the same classes, only in different order. Thus, well performing weights for the first task, will hardly be very useful for the second task. This manifests in the fact, that MAMLs performance can vary by up to <strong>15%</strong>, depending on class label assignments during testing [[Ye et al. 2022]](#Ye).
+
+Second, more difficult datasets are being suggested as few-shot learning benchmarks, like Meta-Dataset [[Triantafillou et al. 2020]](#Triantafillou). In those, the number of classes per task varies, which makes it even impossible to learn a single set of weights for the classification layer.
+
+Thus, it seems reasonable to think about how to initialize the final classification layer before fine-tuning on a new task. Random initialization might not be optimal, as e.g. unnecessary noisy is added [[Kao et al. 2022]](#Kao). This blogpost will discuss different last layer initialization-strategies. All the presented approaches clearly outperform original MAML.
+
+## Quick recap on MAML
+MAML is a well established algorithm in the field of optimization-based meta-learning. Its goal is to find parameters $ \theta $ for a parametric model $f_{\theta}$, that can be efficiently adapted to perform an unseen task from the same task-distribution, using only a few training examples. The pre-training of $ \theta $ is done using two nested loops (bi-level optimization), with meta-training happening in the outer loop, and task-specific fine-tuning in the inner loop. The task-specific fine-tuning is usually done by a few steps of gradient descend:
 
 $$
-\left( \sum_{k=1}^n a_k b_k \right)^2 \leq \left( \sum_{k=1}^n a_k^2 \right) \left( \sum_{k=1}^n b_k^2 \right)
+\begin{equation}
+\theta_{i}' = \theta - \alpha\nabla_{\theta}\mathcal{L_{\mathcal{T_{i}}}}(\theta, \mathcal{D^{tr}})
+\end{equation}
 $$
 
-Note that MathJax 3 is [a major re-write of MathJax](https://docs.mathjax.org/en/latest/upgrading/whats-new-3.0.html) that brought a significant improvement to the loading and rendering speed, which is now [on par with KaTeX](http://www.intmath.com/cg5/katex-mathjax-comparison.php).
-
-
-## Images and Figures
-
-Its generally a better idea to avoid linking to images hosted elsewhere - links can break and you
-might face losing important information in your blog post.
-To include images in your submission in this way, you must do something like the following:
+where $ \alpha $ describes the inner loop learning rate, function $ \mathcal{L_{\mathcal{T_{i}}}} $ a tasks loss, and $ \mathcal{D^{tr}} $ a tasks training-set, whereas the whole task includes a test-set as well: $ \mathcal{T_{i}} = (\mathcal{D_{i}^{tr}}, \mathcal{D_{i}^{test}}) $.
 
-```markdown
-{% raw %}{% include figure.html path="assets/img/2022-12-01-distill-example/iclr.png" class="img-fluid" %}{% endraw %}
-```
+In the outer loop, the meta parameter $ \theta $ is upgraded by back-propagating through the inner loop, to reduce errors made on <span style="color:blue">the tasks test set</span> using the <span style="color:green">fine-tuned parameters</span>:
 
-which results in the following image:
+$$
+\begin{equation}
+\theta' = \theta - \eta\nabla_{\theta} \sum_{\mathcal{T_{i}} \sim p(\mathcal{T})}^{} \mathcal{L_{\mathcal{T_{i}}}} (\color{green}  {\theta_{i}'}, \color{blue} {\mathcal{D^{test}}}).
+\end{equation}
+$$
 
-{% include figure.html path="assets/img/2022-12-01-distill-example/iclr.png" class="img-fluid" %}
+With $ \eta $ being the meta-learning rate. The differentation through the inner loop includes calculating second-order derivatives, and it mainly distincts MAML from just optimizing for a $ \theta $ that minimizes the average task loss.
 
-To ensure that there are no namespace conflicts, you must save your asset to your unique directory
-`/assets/img/2023-05-01-[SUBMISSION NAME]` within your submission.
+Note that in practical scenarios, this second order derivation is computationally expensive, and approximation methods like first-order MAML (FOMAML) [[Finn et al., 2017]](#Finn) or Reptile [[Nichol et al., 2018]](#Nichol) are frequently used. In FOMAML, the outer loop update is simply: $\theta' = \theta - \eta\nabla_{\color{red} {\theta'}} \sum_{\mathcal{T_{i}} \sim p(\mathcal{T})}^{}\mathcal{L_{\mathcal{T_{i}}}}(\theta_{i}', \mathcal{D^{test}})$, which avoids differentiating through the inner loop.
 
-Please avoid using the direct markdown method of embedding images; they may not be properly resized.
-Some more complex ways to load images (note the different styles of the shapes/shadows):
+Before proceeding, let's prepare ourselves for the next sections by looking at notations that we can use when discussing MAML in the few-shot classification regime: The models output prediction can be described as $ \hat{y} = f_{\theta}(\mathbf{x}) =  \underset{c\in[N]}{\mathrm{argmax}} \; h_{\mathbf{w}} (g_{\phi}(\mathbf{x}), c)$, where we divide our model $ f_{\theta}(\mathbf{x}) $ (which takes an input $\mathbf{x}$) into a feature extractor $g_{\phi}(\mathbf{x})$ and the classifier $h_\mathbf{w}(\mathbf{r}, c)$, parameterized by classification head weight vectors $\\{\mathbf{w} \\}_{c=1}^N$. $\mathbf{r}$ denotes an inputs represenation, $c$ the index of the class we want the output prediction for.
 
-<div class="row mt-3">
-    <div class="col-sm mt-3 mt-md-0">
-        {% include figure.html path="assets/img/2022-12-01-distill-example/9.jpg" class="img-fluid rounded z-depth-1" %}
-    </div>
-    <div class="col-sm mt-3 mt-md-0">
-        {% include figure.html path="assets/img/2022-12-01-distill-example/7.jpg" class="img-fluid rounded z-depth-1" %}
-    </div>
-</div>
-<div class="caption">
-    A simple, elegant caption looks good between image rows, after each row, or doesn't have to be there at all.
-</div>
+Finally, $ \theta = \\{\mathbf{w_1}, \mathbf{w_1}, ..., \mathbf{w_N}, \phi\\} $, and we're in harmony with our old notation.
 
-<div class="row mt-3">
-    <div class="col-sm mt-3 mt-md-0">
-        {% include figure.html path="assets/img/2022-12-01-distill-example/8.jpg" class="img-fluid z-depth-2" %}
-    </div>
-    <div class="col-sm mt-3 mt-md-0">
-        {% include figure.html path="assets/img/2022-12-01-distill-example/10.jpg" class="img-fluid z-depth-2" %}
-    </div>
-</div>
+## Learning a single initialization vector
+The first two MAML-variants we'll look at, approach the initialization task by initializing the classification head weight-vectors uniformly for all classes. In the paper
 
-<div class="row mt-3">
-    <div class="col-sm mt-3 mt-md-0">
-        {% include figure.html path="assets/img/2022-12-01-distill-example/11.jpg" class="img-fluid"  %}
-    </div>
-    <div class="col-sm mt-3 mt-md-0">
-        {% include figure.html path="assets/img/2022-12-01-distill-example/12.jpg" class="img-fluid" %}
-    </div>
-    <div class="col-sm mt-3 mt-md-0">
-        {% include figure.html path="assets/img/2022-12-01-distill-example/7.jpg" class="img-fluid" %}
-    </div>
-</div>
+<p></p>
+<span>&nbsp;&nbsp;&nbsp;&#9654;&nbsp;&nbsp;</span>Han-Jia Ye & Wei-Lun Chao (ICLR, 2022) [How to train your MAML to excel in few-shot classification](#Ye),
+<p></p>
 
-### Interactive Figures
+an approach called <strong>Unicorn MAML</strong> is presented. It is explicitly motivated by the effect that different class-label assignments can have. [Ye & Chao](#Ye) report that during testing, vanilla MAML can perform very differently for <ins>tasks with the same set of classes</ins>, which are just <ins>differently ordered</ins>. Namely, they report that classification accuracy can vary up to 15% on the one-shot setting, and up to 8% in the 5-shot setting. This makes MAMLs performance quite unstable.
+<br/><br/>
 
-Here's how you could embed interactive figures that have been exported as HTML files.
-Note that we will be using plotly for this demo, but anything built off of HTML should work
-(**no extra javascript is allowed!**).
-All that's required is for you to export your figure into HTML format, and make sure that the file
-exists in the `assets/html/[SUBMISSION NAME]/` directory in this repository's root directory.
-To embed it into any page, simply insert the following code anywhere into your page.
+<p align = "center">
+<img src="/public/images/2022-06-23-maml_last_layer/perm_final.png" width="80%" height="80%">
+</p>
 
-```markdown
-{% raw %}{% include [FIGURE_NAME].html %}{% endraw %} 
-```
+<p align = "center">
+<em>Fig.1 Example of MAML and a class label permutation. We can see the randomness introduced, as $\mathbf{w_1}$ is supposed to interpret the input features as "unicorn" for the first task, and as "bee" in the second. For both tasks, the class outputted as a prediction should be the same, as in human perception, both tasks are identical. This, however, is obviously not the case.</em>
+</p>
 
-For example, the following code can be used to generate the figure underneath it.
+The solution proposed is fairly simple: Instead of meta-learning $N$ weight vectors for the final layer, only learn a <ins>single vector</ins> $\mathbf{w}$ is meta-learned and used to initialize all $ \\{ \mathbf{w} \\}_{c=1}^N $ before the fine-tuning stage.
 
-```python
-import pandas as pd
-import plotly.express as px
+This forces the model to make random predictions before the inner loop, as $\hat{y_c}= h_{\mathbf{w}} (g_{\phi} (\mathbf{x}), c)$ will be the same for all $c \in [1,...,N ]$.
 
-df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/earthquakes-23k.csv')
+After the inner loop, the updated parameters have been computed as usual: $ \theta' = \\{\mathbf{w_1}', \mathbf{w_2}', ..., \mathbf{w_N}', \phi'\\} $. The gradient for updating the single classification head meta weight vector $\mathbf{w}$, is just the aggregation of the gradients w.r.t. all the single $\mathbf{w_c}$:
 
-fig = px.density_mapbox(
-    df, lat='Latitude', lon='Longitude', z='Magnitude', radius=10,
-    center=dict(lat=0, lon=180), zoom=0, mapbox_style="stamen-terrain")
-fig.show()
+$$
+\begin{equation}
+\nabla_{\mathbf{w}} \mathcal{L_{\mathcal{T_i}}} (\mathcal{D^{test}}, \theta_i) = \sum_{c \in [N]} \nabla_{\mathbf{w_c}}
+\mathcal{L_{\mathcal{T_i}}} (\theta_i, \mathcal{D^{test}})
+\end{equation}
+$$
 
-fig.write_html('./assets/html/2022-12-01-distill-example/plotly_demo_1.html')
-```
+This collapses the models meta-parameters to $ \theta = \\{\mathbf{w}, \phi\\} $.
+<br/><br/>
 
-And then include it with the following:
+<p align = "center">
+<img src="/public/images/2022-06-23-maml_last_layer/unicorn_maml_final.png" width="80%" height="80%">
+</p>
 
-```html
-{% raw %}<div class="l-page">
-  <iframe src="{{ 'assets/html/2022-12-01-distill-example/plotly_demo_1.html' | relative_url }}" frameborder='0' scrolling='no' height="600px" width="100%"></iframe>
-</div>{% endraw %}
-```
+<p align = "center">
+<em>Fig.2 Overview of Unicorn MAML. We can see that class label permutations don't matter anymore, as before fine-tuning, the probability of predicting each class is the same.</em>
+</p>
 
-Voila!
+This tweak to vanilla MAML makes Unicorn MAML permutation invariant, as models fine-tuned on tasks including the same categories - just differently ordered - will now yield the same output predictions. Also, the method could be used with datasets, where the number of classes varies, without any further adaptation: It doesn't matter how many classification head weight vectors are initialized by the single meta classification head weight vector.
 
-<div class="l-page">
-  <iframe src="{{ 'assets/html/2022-12-01-distill-example/plotly_demo_1.html' | relative_url }}" frameborder='0' scrolling='no' height="600px" width="100%"></iframe>
-</div>
+Furthermore, the uniform initialization in Unicorn-MAML addresses the problem of memorization overfitting [[Yin et al., 2020]](#Yin). The phenomenon describes a scenario, where a single model can learn all the training tasks only from the test data in the outer loop. This leads to a model that learns to perform the training tasks, but also to a model that doesn't do any fine-tuning, and thus fails do generalize to unseen tasks. Again, the uniform initialization of the classification head for all classes forces the model to adapt during fine-tuning, and thus prevents memorization overfitting.
 
-## Citations
+The approach is reported to perform on par with recent few-shot algorithms.
 
-Citations are then used in the article body with the `<d-cite>` tag.
-The key attribute is a reference to the id provided in the bibliography.
-The key attribute can take multiple ids, separated by commas.
+Let's finally think of how to interpret Unicorn MAML: When meta-learning only a single classification head vector, one could say that not a mapping from features to classes is tried to be learned anymore, but a prioritization of features, which seemed to be more relevant for the classification decision across tasks, than others.
 
-The citation is presented inline like this: <d-cite key="gregor2015draw"></d-cite> (a number that displays more information on hover).
-If you have an appendix, a bibliography is automatically created and populated in it.
+## Zero initialization
+The second approach for a uniform initialization is proposed in the paper
 
-Distill chose a numerical inline citation style to improve readability of citation dense articles and because many of the benefits of longer citations are obviated by displaying more information on hover.
-However, we consider it good style to mention author last names if you discuss something at length and it fits into the flow well — the authors are human and it’s nice for them to have the community associate them with their work.
+<p></p>
+<span>&nbsp;&nbsp;&nbsp;&#9654;&nbsp;&nbsp;</span>Chia-Hsiang Kao et al. (ICLR, 2022) [MAML is a Noisy Contrastive Learner in Classification](#Kao).
+<p></p>
 
-***
+[Kao et al.](#kao) modify original MAML, by setting the whole classification head to zero,
+before each inner loop. They refer to this MAML-tweak as the <strong>zeroing trick</strong>.
 
-## Footnotes
+An overview of MAML with the zeroing trick is displayed below:
 
-Just wrap the text you would like to show up in a footnote in a `<d-footnote>` tag.
-The number of the footnote will be automatically generated.<d-footnote>This will become a hoverable footnote.</d-footnote>
+<p align = "center">
+<img src="/public/images/2022-06-23-maml_last_layer/zeroing_trick.png" width="77%" height="77%">
+</p>
 
-***
+<p align = "center">
+<em>Fig.3 MAML with the zeroing trick applied.</em>
+</p>
 
-## Code Blocks
+Note that $S_n$ and $Q_n$ refer to $\mathcal{D_{i}^{tr}}$ and $\mathcal{D_{i}^{test}}$ in this notation.
 
-This theme implements a built-in Jekyll feature, the use of Rouge, for syntax highlighting.
-It supports more than 100 languages.
-This example is in C++.
-All you have to do is wrap your code in a liquid tag:
+Through applying the zero initialization, three of the problems addressed by Unicorn MAML, are solved as well: - MAML with the zeroing trick applied leads to random predictions before fine-tuning. This solves the problem of class
+label assignment permutations during testing.
+- Through the random predictions before fine-tuning, memorization overfitting is prevented as well.
+- The zeroing trick makes MAML applicable for datasets with a varying number of classes per task.
 
-{% raw  %}
-{% highlight c++ linenos %}  <br/> code code code <br/> {% endhighlight %}
-{% endraw %}
+Interestingly, the motivation for applying the zeroing trick, stated by [Kao et al.](#kao), is entirely different. In general, [Kao et al.](#kao) want to unveil in what sense MAML encourages its models to learn general-purpose feature representations. They show, that under some assumptions, there is a supervised contrastive learning (SCL) objective underlying MAML. In SCL, label information is leveraged by pulling embeddings belonging to the same class closer together, while increasing the embedding distances of samples from different classes [[Khosla et al. 2020]](#Khosla).
 
-The keyword `linenos` triggers display of line numbers. You can try toggling it on or off yourself below:
+More specifically, they show that the outer-loop update for the encoder follows a noisy SCL loss under the following assumptions:
+1. The encoder weights are frozen in the inner-loop (EFIL assumption)
+2. There is only a single inner loop update step.<d-footnote>Note that FOMAML technically follows a noisy SCL loss without this assumption. However, when applying the zeroing trick, this assumtion is needed again for stating that the encoder update is following an SCL loss</d-footnote>
 
-{% highlight c++ %}
+A noisy SCL loss means, that cases can occur where the loss forces the model to maximize similarities between embeddings from samples of different classes. The outer-loop encoder loss in this setting contains an "interference term", which causes the model to pull together embeddings from different tasks, or to pull embeddings into a random direction, with the randomness being introduced by random initialization of the classification head. Those two phenomena are termed <ins>cross-task interference</ins>
+and <ins>initialization interference</ins>. Noise and interference in the loss vanish when applying the zeroing trick, and the outer-loop encoder loss turns into a proper SCL loss. Meaning that minimizing this loss forces embeddings of the same class/task together, while pushing embeddings from the same task and different classes apart. A decent increase in performance is observed for MAML with the zeroing trick, compared to vanilla MAML.
 
-int main(int argc, char const \*argv[])
-{
-string myString;
+Those findings are derived using a general formulation of MAML, with a cross-entropy loss, and the details are available in [the paper](#kao) of course. Also, a slightly simpler example is stated, to give an intuition of MAMLs SCL properties. I will briefly summarize it in the following, to share this intuition with you. However, you might also want to [skip](#initialization-using-prototypes) to the next section.
 
-    cout << "input a string: ";
-    getline(cin, myString);
-    int length = myString.length();
+### MAMLs SCL Intuition
+To get an intuition of how MAML relates to SCL, let's look at the following setup: an N-way one-shot classification task, using MAML with Mean Squared Error (MSE) between the 1-hot encoded class label and the models prediction. Furthermore, the EFIL assumption is made, the zeroing trick is applied, only a single inner loop update step is used, and only a single task is sampled per batch.
 
-    char charArray = new char * [length];
+In this setting, the classification heads inner-loop update for a single datapoint looks like this:
 
-    charArray = myString;
-    for(int i = 0; i < length; ++i){
-        cout << charArray[i] << " ";
-    }
+$$
+\begin{equation}
+\mathbf{w}' = \mathbf{w} - \alpha (-g_{\phi} (\mathbf{x}_{1}^{tr}) \mathbf{t}_{1}^{tr\top})
+\end{equation}
+$$
 
-    return 0;
-}
+$\mathbf{t}_1^{tr}$ refers to the one-hot encoded class label belonging to $\mathbf{x}_1^{tr}$. In words, the features extracted for training example $\mathbf{x}_1^{tr}$ are added to column $\mathbf{w}_c$, with $c$ being the index of 1 in $\mathbf{t}_1^{tr}$. For multiple examples, the features of all training examples labeled with class $c$ are added to the $c^{th}$ column of $\mathbf{w}$.
 
-{% endhighlight %}
+Now, for calculating the models output in the outer loop, the model computes the dot products of the columns $ \\{\mathbf{w} \\}_{c=1}^N $ and the encoded test examples $$ \begin{equation} g_{\phi}(\mathbf{x}_1^{test}) \end{equation} $$ (and takes a softmax afterwards.) To match the one-hot encoded label as good as possible, the dot product has to be large when $$ \begin{equation} \mathbf{t}_1^{test} \end{equation} $$ = $1$ at index $c$, and small otherwise. We can see that the loss enforces embedding similarity for features from the same classes, while enforcing dissimilarity for embeddings from different classes, which fits the SCL objective.
 
-***
+## Initialization using prototypes
+A more sophisticated approach for last layer initialization in MAML is introduced in the paper
 
-## Diagrams
+<p></p>
+<span>&nbsp;&nbsp;&nbsp;&#9654;&nbsp;&nbsp;</span>Eleni Triantafillou et al. (ICLR, 2020) [Meta-Dataset: A Dataset of Datasets for Learning to Learn from Few Examples](#Triantafillou).
+<p></p>
 
-This theme supports generating various diagrams from a text description using [jekyll-diagrams](https://github.com/zhustec/jekyll-diagrams){:target="\_blank"} plugin.
-Below, we generate a few examples of such diagrams using languages such as [mermaid](https://mermaid-js.github.io/mermaid/){:target="\_blank"}, [plantuml](https://plantuml.com/){:target="\_blank"}, [vega-lite](https://vega.github.io/vega-lite/){:target="\_blank"}, etc.
+As one might guess from the name, <strong>Proto-MAML</strong> makes use of Prototypical Networks (PNs) for enhancing MAML. Opposite to the two initialization strategies presented above, Proto-MAML does not uniformly initialize the classification head weights before each inner loop for all classes. Instead, it calculates class-specific initialization vectors, based on the training examples. This solves some of the problems mentioned earlier (see [Conclusion & Discussion](#conclusion--discussion)), but also it adds another type of logic to the classification layer.
 
-**Note:** different diagram-generation packages require external dependencies to be installed on your machine.
-Also, be mindful of that because of diagram generation the fist time you build your Jekyll website after adding new diagrams will be SLOW.
-For any other details, please refer to [jekyll-diagrams](https://github.com/zhustec/jekyll-diagrams){:target="\_blank"} README.
+Let's revise how PNs work, when used for few-shot learning, for understanding Proto-MAML afterwards:
 
-**Note:** This is not supported for local rendering! 
+Class prototypes $$ \begin{equation} \mathbf{c}_c \end{equation} $$ are computed by averaging over each classes train example embeddings, created by a feature extractor $g_{\phi}(\mathbf{x})$. For classifying a test example, a softmax over the distances (e.g. squared euclidean distance) between class prototypes $$ \begin{equation} \mathbf{c}_c \end{equation} $$ and example embeddings $g_{\phi}(\mathbf{x}^{test})$ is used, to generate probabilities for each class.
 
-The diagram below was generated by the following code:
+When using the squared euclidean distance, the models output logits are expressed as:
 
-{% raw %}
-```
-{% mermaid %}
-sequenceDiagram
-    participant John
-    participant Alice
-    Alice->>John: Hello John, how are you?
-    John-->>Alice: Great!
-{% endmermaid %}
-```
-{% endraw %}
+$$
+\begin{equation} - \vert \vert g_{\phi}(\mathbf{x}) - \mathbf{c}_c \vert \vert^2 = −g_{\phi}(\mathbf{\mathbf{x}})^{\top} g_{\phi}(\mathbf{x}) + 2 \mathbf{c}_{c}^{\top} g_{\phi}(\mathbf{x}) − \mathbf{c}_{c}^{\top} \mathbf{c}_{c} = 2 \mathbf{c}_{c}^{\top} g_{\phi}(\mathbf{x}) − \vert \vert \mathbf{c}_{c} \vert \vert^2 + constant.
+\end{equation}
+$$
 
-{% mermaid %}
-sequenceDiagram
-participant John
-participant Alice
-Alice->>John: Hello John, how are you?
-John-->>Alice: Great!
-{% endmermaid %}
+(Note that the "test" superscripts on $\mathbf{x}$ are left out for clarity.) $−g_{\phi}(\mathbf{x})^{\top} g_{\phi}(\mathbf{x})$ is disregarded here, as it's the same for all logits, and thus doesn't affect the output probabilities. When inspecting the left-over equation, we can see that it now has the shape of a linear classifier. More specifically, a linear classifier with weight vectors $$ \begin{equation} \mathbf{w}_c = 2 \mathbf{c}_c^{\top} \end{equation} $$ and biases $$ \begin{equation} b_c = \vert \vert \mathbf{c}_{c} \vert \vert^2 \end{equation} $$.
 
-***
+Proceeding to Proto-MAML, [Triantafillou et al.](#triantafollou) adapt vanilla MAML by initializing the classification head using the prototype weights and biases, as just discussed. The initialization happens before the inner loop for each task, and the prototypes are computed by MAMLs own feature extractor. Afterwards, the fine-tuning works as usual. Finally, when updating $\theta$ in the outer loop, the gradients flow also through the initialization of $$ \begin{equation}\mathbf{w}_c \end{equation} $$ and $b_c$, which is easy as they fully depend on $$ \begin{equation} g_{\phi}(\mathbf{x})\end{equation} $$.
 
-## Tweets
+Note, that because of computational reasons, Triantafillou refer to Proto-MAML as (FO-)Proto-MAML.
 
-An example of displaying a tweet:
-{% twitter https://twitter.com/rubygems/status/518821243320287232 %}
+With Proto-MAML, one gets a task-specific, data-dependent initialization in a simple fashion, which seems super nice. For computing the models output logits after classification head initialization, dot products between class prototypes and embedded examples are computed, which again seems very reasonable.
 
-An example of pulling from a timeline:
-{% twitter https://twitter.com/jekyllrb maxwidth=500 limit=3 %}
+One could argue, that in the one-shot scenario, Proto-MAML doesn't learn that much in the inner loop, beside the initialization itself. This happens, as the dot product between an embedded training example and one class prototype (which equals the embedded training example itself for one class) will be unproportionally high. For a k-shot example, this effect might be less, but still there is always one training example embedding within the prototype to compare. Following this thought, the training samples would rather provide a useful initialization of the final layer, than a lot of parameter adaptation. One has to say that Proto-MAML performed quite well in the authors experiments.
 
-For more details on using the plugin visit: [jekyll-twitter-plugin](https://github.com/rob-murray/jekyll-twitter-plugin)
+### What else is there?
+Before proceeding to [Conclusion & Discussion](#conclusion--discussion), some pointers to methods which didn't perfectly fit the topic, but which are closely related:
 
-***
+The first method worth mentioning is called Latent Embedding Optimization (LEO) [[Rusu et al. 2019]](#Rusu). The authors encode the training data in a low dimensional subspace, from which model parameters $\theta$ can be generated. In the example presented, $\theta$ consists only of $\mathbf{w}$, so for the first inner-loop iteration, this would perfectly fit our initialization topic. The low dimensional code is generated using a feed forward encoder, as well as a matching network. Using the matching network allows LEO to consider relations between the training examples of different classes. Very similar classes for example, might require different decision boundaries than more distinct classes, hence the intuition.
 
-## Blockquotes
+LEO deviates from the initialization scheme, however, as optimization is done in the low dimensional subspace, and not on the models parameters directly. It is stated that optimizing in a lower dimensional subspace helps in low-data regimes.
 
-<blockquote>
-    We do not grow absolutely, chronologically. We grow sometimes in one dimension, and not in another, unevenly. We grow partially. We are relative. We are mature in one realm, childish in another.
-    —Anais Nin
-</blockquote>
+Another related method is called MetaOptNet [[Lee et al. 2019]](#Lee). In this approach, convex base learners, like support vector machines, are used as the classification head. Those can be optimized till convergence, which solves e.g. the problem of varying performance due to random class label assignments.
 
-***
+## Conclusion & Discussion
+To conclude, we've seen that a variety of problems can be tackled by using initialization strategies for MAMLs linear classification head, including:
+- Varying performance due to random class label assignments
+- Ability of MAML to work on datasets where the number of classes per task varies
+- Memorization overfitting
+- Cross-task interference
+- and Initialization interference.
 
+Furthermore, for all the approaches presented, a decent gain in performance is reported in comparison to vanilla MAML. It seems therefore very reasonable to spend some time thinking about last layer initialization.
 
-## Layouts
+Looking at the problems mentioned, and variants discussed in more detail, we can state that all the different variants make MAML <ins>permutation invariant with regard to class label assignments</ins>. Unicorn MAML and the zeroing trick solve it by uniform initialization of $\mathbf{w}$. In Proto-MAML, the initialization happens with regard to the class label assignment, so it's permutation invariant as well.
 
-The main text column is referred to as the body.
-It is the assumed layout of any direct descendants of the `d-article` element.
+Also, all variants are compatible with <ins>datasets where the number of classes per task varies</ins>. In Unicorn MAML, an arbitrary number of classification head vectors can be initialized with the single meta-learned classification head weight vector. When zero-initializing the classification head, the number of classes per task does not matter as well. In Proto-MAML, prototypes can be computed for an arbitrary number of classes, so again, the algorithm works on such a dataset without further adaption.
 
-<div class="fake-img l-body">
-  <p>.l-body</p>
-</div>
+Next, Unicorn MAML and the zeroing trick solve <ins>memorization overfitting</ins>, again by initializing $\mathbf{w}$ uniformly for all classes. Proto-MAML solves memorization overfitting as well, as the task-specific initialization of $\mathbf{w}$ itself can be interpreted as fine-tuning.
 
-For images you want to display a little larger, try `.l-page`:
+<ins>Cross-task interference</ins> and <ins>initialization interference</ins> are solved by the zeroing trick. For the other models, this is harder to say, as the derivations made by [Kao et al.](#Kao) are quite case specific. Intuitively, Proto-MAML should solve cross-task interference, as the classification head is reinitialized after each task. Initialization interference is not solved by either ProtoMAML or Unicorn MAML, as random initialization remains.
 
-<div class="fake-img l-page">
-  <p>.l-page</p>
-</div>
+Note that in a discussion with a reviewer, [Kao et al.](#kao) state that the main results they show are achieved by models which had the zeroing trick implemented, but which didn't follow the EFIL assumption. They argue that using only the zeroing trick still enhances the supervised contrastiveness. This kind of puts their whole theory into perspective, as without the EFIL assumption, MAML with the zeroing trick is neither an SCL algorithm nor a noisy SCL algorithm. Still, noteable performance gains are reported though.
 
-All of these have an outset variant if you want to poke out from the body text a little bit.
-For instance:
+The question arises, whether the whole theoretical background is needed, or whether the zeroing tricks benefit is mainly the uniform initialization, like in Unicorn MAML. It would be nice to see how the single learned initialization vector in Unicorn MAML turns out to be shaped, and how it compares to the zeroing trick. While the zeroing trick reduces cross-task noise and initialization noise, a single initialization vector can weight some features as more important than others for the final classification decision across tasks.
 
-<div class="fake-img l-body-outset">
-  <p>.l-body-outset</p>
-</div>
+In contrast to the uniform initialization approaches, we have seen Proto-MAML, where class-specific classification head vectors are computed for initialization, based on the training data.
 
-<div class="fake-img l-page-outset">
-  <p>.l-page-outset</p>
-</div>
-
-Occasionally you’ll want to use the full browser width.
-For this, use `.l-screen`.
-You can also inset the element a little from the edge of the browser by using the inset variant.
-
-<div class="fake-img l-screen">
-  <p>.l-screen</p>
-</div>
-<div class="fake-img l-screen-inset">
-  <p>.l-screen-inset</p>
-</div>
-
-The final layout is for marginalia, asides, and footnotes.
-It does not interrupt the normal flow of `.l-body` sized text except on mobile screen sizes.
-
-<div class="fake-img l-gutter">
-  <p>.l-gutter</p>
-</div>
-
-***
-
-## Other Typography?
-
-Emphasis, aka italics, with *asterisks* (`*asterisks*`) or _underscores_ (`_underscores_`).
-
-Strong emphasis, aka bold, with **asterisks** or __underscores__.
-
-Combined emphasis with **asterisks and _underscores_**.
-
-Strikethrough uses two tildes. ~~Scratch this.~~
-
-1. First ordered list item
-2. Another item
-⋅⋅* Unordered sub-list. 
-1. Actual numbers don't matter, just that it's a number
-⋅⋅1. Ordered sub-list
-4. And another item.
-
-⋅⋅⋅You can have properly indented paragraphs within list items. Notice the blank line above, and the leading spaces (at least one, but we'll use three here to also align the raw Markdown).
-
-⋅⋅⋅To have a line break without a paragraph, you will need to use two trailing spaces.⋅⋅
-⋅⋅⋅Note that this line is separate, but within the same paragraph.⋅⋅
-⋅⋅⋅(This is contrary to the typical GFM line break behaviour, where trailing spaces are not required.)
-
-* Unordered list can use asterisks
-- Or minuses
-+ Or pluses
-
-[I'm an inline-style link](https://www.google.com)
-
-[I'm an inline-style link with title](https://www.google.com "Google's Homepage")
-
-[I'm a reference-style link][Arbitrary case-insensitive reference text]
-
-[I'm a relative reference to a repository file](../blob/master/LICENSE)
-
-[You can use numbers for reference-style link definitions][1]
-
-Or leave it empty and use the [link text itself].
-
-URLs and URLs in angle brackets will automatically get turned into links. 
-http://www.example.com or <http://www.example.com> and sometimes 
-example.com (but not on Github, for example).
-
-Some text to show that the reference links can follow later.
-
-[arbitrary case-insensitive reference text]: https://www.mozilla.org
-[1]: http://slashdot.org
-[link text itself]: http://www.reddit.com
-
-Here's our logo (hover to see the title text):
-
-Inline-style: 
-![alt text](https://github.com/adam-p/markdown-here/raw/master/src/common/images/icon48.png "Logo Title Text 1")
-
-Reference-style: 
-![alt text][logo]
-
-[logo]: https://github.com/adam-p/markdown-here/raw/master/src/common/images/icon48.png "Logo Title Text 2"
-
-Inline `code` has `back-ticks around` it.
-
-```javascript
-var s = "JavaScript syntax highlighting";
-alert(s);
-```
- 
-```python
-s = "Python syntax highlighting"
-print s
-```
- 
-```
-No language indicated, so no syntax highlighting. 
-But let's throw in a <b>tag</b>.
-```
-
-Colons can be used to align columns.
-
-| Tables        | Are           | Cool  |
-| ------------- |:-------------:| -----:|
-| col 3 is      | right-aligned | $1600 |
-| col 2 is      | centered      |   $12 |
-| zebra stripes | are neat      |    $1 |
-
-There must be at least 3 dashes separating each header cell.
-The outer pipes (|) are optional, and you don't need to make the 
-raw Markdown line up prettily. You can also use inline Markdown.
-
-Markdown | Less | Pretty
---- | --- | ---
-*Still* | `renders` | **nicely**
-1 | 2 | 3
-
-> Blockquotes are very handy in email to emulate reply text.
-> This line is part of the same quote.
-
-Quote break.
-
-> This is a very long line that will still be quoted properly when it wraps. Oh boy let's keep writing to make sure this is long enough to actually wrap for everyone. Oh, you can *put* **Markdown** into a blockquote. 
-
-
-Here's a line for us to start with.
-
-This line is separated from the one above by two newlines, so it will be a *separate paragraph*.
-
-This line is also a separate paragraph, but...
-This line is only separated by a single newline, so it's a separate line in the *same paragraph*.
+Finally, [Ye et al.](#Ye) compare the performance between Proto-MAML and Unicorn MAML on MiniImageNet and TieredImageNet. Unicorn MAML performs slightly better here, in the one- and five-shot setting. [Kao et al.](#Kao) don't report any particular numbers for their zeroing trick.
