@@ -237,4 +237,4 @@ The question arises, whether the whole theoretical background is needed, or whet
 
 In contrast to the uniform initialization approaches, we have seen Proto-MAML, where class-specific classification head vectors are computed for initialization, based on the training data.
 
-Finally, [Ye et al.](#Ye) compare the performance between Proto-MAML and Unicorn MAML on MiniImageNet and TieredImageNet. Unicorn MAML performs slightly better here, in the one- and five-shot setting. [Kao et al.](#Kao) don't report any particular numbers for their zeroing trick.
+Finally, Ye et al. [2022] <d-cite key="DBLP:conf/iclr/YeC22"></d-cite> compare the performance between Proto-MAML and Unicorn MAML on MiniImageNet and TieredImageNet. Unicorn MAML performs slightly better here, in the one- and five-shot setting. Kao et al. [2020] <d-cite key="DBLP:conf/iclr/KaoCC22"></d-cite> don't report any particular numbers for their zeroing trick.
