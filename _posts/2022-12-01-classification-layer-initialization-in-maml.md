@@ -44,40 +44,39 @@ toc:
 
 
 ## Introduction
-In a previous study, Raghu et al. [2020] <d-cite key="DBLP:conf/iclr/RaghuRBV20"></d-cite> found that in model-agnostic meta-learning (MAML) for few-shot classification, nearly all change observed in the network during the inner loop fine-tuning occurs in the linear classification head. The common interpretation is, that the linear head remaps encoded features to the new tasks classes in this phase. In classical MAML, the final linear layer weights are meta-learned as usual. There are problems to this approach though:
 
-First, it is hard to imagine that a single set of optimal weights can be learned. This becomes evident, when looking at class label permutations: Two different tasks can consist of the same classes, only in different order. Thus, well performing weights for the first task, will hardly be very useful for the second task. This manifests in the fact, that MAMLs performance can vary by up to <strong>15%</strong>, depending on class label assignments during testing <d-cite key="DBLP:conf/iclr/YeC22"></d-cite>.
+In a previous study, Raghu et al. [2020] <d-cite key="DBLP:conf/iclr/RaghuRBV20"></d-cite> found that in model-agnostic meta-learning (MAML) for few-shot classification, the majority of changes observed in the network during the inner loop fine-tuning process occurred in the linear classification head. It is commonly believed that during this phase, the linear head remaps encoded features to the classes of the new task. In traditional MAML, the weights of the final linear layer are meta-learned in the usual way. However, there are some issues with this approach:
 
-Second, more difficult datasets are being suggested as few-shot learning benchmarks, like Meta-Dataset <d-cite key="DBLP:conf/iclr/TriantafillouZD20"></d-cite>. In those, the number of classes per task varies, which makes it even impossible to learn a single set of weights for the classification layer.
+First, it is difficult to imagine that a single set of optimal weights can be learned. This becomes apparent when considering class label permutations: two different tasks may have the same classes, but in a different order. As a result, the weights that perform well for the first task will likely not be effective for the second task. This is reflected in the fact that MAML's performance can vary by up to 15% depending on the class label assignments during testing <d-cite key="DBLP:conf/iclr/YeC22"></d-cite>.
 
-Thus, it seems reasonable to think about how to initialize the final classification layer before fine-tuning on a new task. Random initialization might not be optimal, as e.g. unnecessary noisy is added <d-cite key="DBLP:conf/iclr/KaoCC22"></d-cite>. This blogpost will discuss different last layer initialization-strategies. All the presented approaches clearly outperform original MAML.
+Second, more challenging datasets are being proposed as few-shot learning benchmarks, such as Meta-Dataset <d-cite key="DBLP:conf/iclr/TriantafillouZD20"></d-cite>]. These datasets have varying numbers of classes per task, making it impossible to learn a single set of weights for the classification layer.
+
+Therefore, it seems logical to consider how to initialize the final classification layer before fine-tuning on a new task. Random initialization may not be optimal, as it can introduce unnecessary noise <d-cite key="DBLP:conf/iclr/KaoCC22"></d-cite>. 
+
+This blog post will discuss different approaches to last layer initialization that claim to outperform the original MAML method.
 
 ## Quick recap on MAML
-MAML <d-cite key="DBLP:conf/icml/FinnAL17"></d-cite> is a well established algorithm in the field of optimization-based meta-learning. Its goal is to find parameters $\theta $ for a parametric model $f_{\theta}$, that can be efficiently adapted to perform an unseen task from the same task-distribution, using only a few training examples. The pre-training of $ \theta $ is done using two nested loops (bi-level optimization), with meta-training happening in the outer loop, and task-specific fine-tuning in the inner loop. The task-specific fine-tuning is usually done by a few steps of gradient descend:
+Model-Agnostic Meta-Learning (MAML) <d-cite key="DBLP:conf/icml/FinnAL17"></d-cite> is a well-established algorithm in the field of optimization-based meta-learning. Its goal is to find parameters $\theta$ for a parametric model $f_{\theta}$ that can be efficiently adapted to perform an unseen task from the same task distribution, using only a few training examples. The pre-training of $\theta$ is done using two nested loops (bi-level optimization), with meta-training occurring in the outer loop and task-specific fine-tuning in the inner loop. The task-specific fine-tuning is typically done using a few steps of gradient descent:
 
 $$
-\begin{equation}
 \theta_{i}' = \theta - \alpha\nabla_{\theta}\mathcal{L_{\mathcal{T_{i}}}}(\theta, \mathcal{D^{tr}})
-\end{equation}
 $$
 
-where $ \alpha $ describes the inner loop learning rate, function $ \mathcal{L_{\mathcal{T_{i}}}} $ a tasks loss, and $ \mathcal{D^{tr}} $ a tasks training-set, whereas the whole task includes a test-set as well: $ \mathcal{T_{i}} = (\mathcal{D_{i}^{tr}}, \mathcal{D_{i}^{test}}) $.
+where $\alpha$ is the inner loop learning rate, $\mathcal{L_{\mathcal{T_{i}}}}$ is a task's loss function, and $\mathcal{D^{tr}}$ is a task's training set. The task includes a test set as well: $\mathcal{T_{i}} = (\mathcal{D_{i}^{tr}}, \mathcal{D_{i}^{test}})$.
 
-In the outer loop, the meta parameter $ \theta $ is upgraded by back-propagating through the inner loop, to reduce errors made on <span style="color:blue">the tasks test set</span> using the <span style="color:green">fine-tuned parameters</span>:
+In the outer loop, the meta parameter $\theta$ is updated by backpropagating through the inner loop to reduce errors made on the tasks' test set using the fine-tuned parameters:
 
 $$
-\begin{equation}
-\theta' = \theta - \eta\nabla_{\theta} \sum_{\mathcal{T_{i}} \sim p(\mathcal{T})}^{} \mathcal{L_{\mathcal{T_{i}}}} (\color{green}  {\theta_{i}'}, \color{blue} {\mathcal{D^{test}}}).
-\end{equation}
+\theta' = \theta - \eta\nabla_{\theta} \sum_{\mathcal{T_{i}} \sim p(\mathcal{T})}^{} \mathcal{L_{\mathcal{T_{i}}}}(\theta_{i}', \mathcal{D^{test}}).
 $$
 
-With $ \eta $ being the meta-learning rate. The differentation through the inner loop includes calculating second-order derivatives, and it mainly distincts MAML from just optimizing for a $ \theta $ that minimizes the average task loss.
+Here, $\eta$ is the meta-learning rate. The differentiation through the inner loop involves calculating second-order derivatives, which mainly distinguishes MAML from simply optimizing for a $\theta$ that minimizes the average task loss.
 
-Note that in practical scenarios, this second order derivation is computationally expensive, and approximation methods like first-order MAML (FOMAML)  <d-cite key="DBLP:conf/icml/FinnAL17"></d-cite> or Reptile  <d-cite key="DBLP:journals/corr/abs-1803-02999"></d-cite> are frequently used. In FOMAML, the outer loop update is simply: $\theta' = \theta - \eta\nabla_{\color{red} {\theta'}} \sum_{\mathcal{T_{i}} \sim p(\mathcal{T})}^{}\mathcal{L_{\mathcal{T_{i}}}}(\theta_{i}', \mathcal{D^{test}})$, which avoids differentiating through the inner loop.
+It is worth noting that in practical scenarios, this second-order differentiation is computationally expensive, and approximation methods such as first-order MAML (FOMAML) <d-cite key="DBLP:conf/icml/FinnAL17"></d-cite> or Reptile <d-cite key="DBLP:journals/corr/abs-1803-02999"></d-cite> are often used. In FOMAML, the outer loop update is simply: $\theta' = \theta - \eta\nabla_{\theta'} \sum_{\mathcal{T_{i}} \sim p(\mathcal{T})}^{}\mathcal{L_{\mathcal{T_{i}}}}(\theta_{i}', \mathcal{D^{test}})$, which avoids differentiating through the inner loop.
 
-Before proceeding, let's prepare ourselves for the next sections by looking at notations that we can use when discussing MAML in the few-shot classification regime: The models output prediction can be described as $ \hat{y} = f_{\theta}(\mathbf{x}) =  \underset{c\in[N]}{\mathrm{argmax}} \; h_{\mathbf{w}} (g_{\phi}(\mathbf{x}), c)$, where we divide our model $ f_{\theta}(\mathbf{x}) $ (which takes an input $\mathbf{x}$) into a feature extractor $g_{\phi}(\mathbf{x})$ and the classifier $h_\mathbf{w}(\mathbf{r}, c)$, parameterized by classification head weight vectors $\\{\mathbf{w} \\}_{c=1}^N$. $\mathbf{r}$ denotes an inputs represenation, $c$ the index of the class we want the output prediction for.
+Before proceeding, let's prepare ourselves for the next sections by looking at the notation we can use when discussing MAML in the few-shot classification regime: The model's output prediction can be described as $\hat{y} = f_{\theta}(\mathbf{x}) = \underset{c\in[N]}{\mathrm{argmax}} ; h_{\mathbf{w}} (g_{\phi}(\mathbf{x}), c)$, where we divide our model $f_{\theta}(\mathbf{x})$ (which takes an input $\mathbf{x}$) into a feature extractor $g_{\phi}(\mathbf{x})$ and the classifier $h_\mathbf{w}(\mathbf{r}, c)$, parameterized by classification head weight vectors ${\mathbf{w}}_{c=1}^N$. $\mathbf{r}$ denotes an input's representation, and $c$ is the index of the class we want the output prediction for.
 
-Finally, $ \theta = \\{\mathbf{w_1}, \mathbf{w_1}, ..., \mathbf{w_N}, \phi\\} $, and we're in harmony with our old notation.
+Finally, $\theta = {\mathbf{w_1}, \mathbf{w_1}, ..., \mathbf{w_N}, \phi}$, and we are consistent with our previous notation.
 
 ## Learning a single initialization vector
 The first two MAML-variants we'll look at, approach the initialization task by initializing the classification head weight-vectors uniformly for all classes. In the paper
@@ -89,9 +88,8 @@ The first two MAML-variants we'll look at, approach the initialization task by i
 an approach called <strong>Unicorn MAML</strong> is presented. It is explicitly motivated by the effect that different class-label assignments can have. Ye & Chao [2022] <d-cite key="DBLP:conf/iclr/YeC22"></d-cite> report that during testing, vanilla MAML can perform very differently for <ins>tasks with the same set of classes</ins>, which are just <ins>differently ordered</ins>. Namely, they report that classification accuracy can vary up to 15% on the one-shot setting, and up to 8% in the 5-shot setting. This makes MAMLs performance quite unstable.
 <br/><br/>
 
-<p align = "center">
-<img src="/public/images/2022-06-23-maml_last_layer/perm_final.png" width="80%" height="80%">
-</p>
+
+{% include figure.html path="assets/img/2022-12-01-classification-layer-initialization-in-maml/perm_final.png" class="img-fluid" %}
 
 <p align = "center">
 <em>Fig.1 Example of MAML and a class label permutation. We can see the randomness introduced, as $\mathbf{w_1}$ is supposed to interpret the input features as "unicorn" for the first task, and as "bee" in the second. For both tasks, the class outputted as a prediction should be the same, as in human perception, both tasks are identical. This, however, is obviously not the case.</em>
@@ -104,18 +102,15 @@ This forces the model to make random predictions before the inner loop, as $\hat
 After the inner loop, the updated parameters have been computed as usual: $ \theta' = \\{\mathbf{w_1}', \mathbf{w_2}', ..., \mathbf{w_N}', \phi'\\} $. The gradient for updating the single classification head meta weight vector $\mathbf{w}$, is just the aggregation of the gradients w.r.t. all the single $\mathbf{w_c}$:
 
 $$
-\begin{equation}
 \nabla_{\mathbf{w}} \mathcal{L_{\mathcal{T_i}}} (\mathcal{D^{test}}, \theta_i) = \sum_{c \in [N]} \nabla_{\mathbf{w_c}}
 \mathcal{L_{\mathcal{T_i}}} (\theta_i, \mathcal{D^{test}})
-\end{equation}
 $$
 
 This collapses the models meta-parameters to $ \theta = \\{\mathbf{w}, \phi\\} $.
 <br/><br/>
 
-<p align = "center">
-<img src="/public/images/2022-06-23-maml_last_layer/unicorn_maml_final.png" width="80%" height="80%">
-</p>
+
+{% include figure.html path="assets/img/2022-12-01-classification-layer-initialization-in-maml/unicorn_maml_final.png" class="img-fluid" %}
 
 <p align = "center">
 <em>Fig.2 Overview of Unicorn MAML. We can see that class label permutations don't matter anymore, as before fine-tuning, the probability of predicting each class is the same.</em>
@@ -140,9 +135,10 @@ Kao et al. [2022] <d-cite key="DBLP:conf/iclr/KaoCC22"></d-cite> modify original
 
 An overview of MAML with the zeroing trick is displayed below:
 
-<p align = "center">
-<img src="/public/images/2022-06-23-maml_last_layer/zeroing_trick.png" width="77%" height="77%">
-</p>
+
+
+{% include figure.html path="assets/img/2022-12-01-classification-layer-initialization-in-maml/zeroing_trick.png" class="img-fluid" %}
+
 
 <p align = "center">
 <em>Fig.3 MAML with the zeroing trick applied.</em>
@@ -172,14 +168,12 @@ To get an intuition of how MAML relates to SCL, let's look at the following setu
 In this setting, the classification heads inner-loop update for a single datapoint looks like this:
 
 $$
-\begin{equation}
 \mathbf{w}' = \mathbf{w} - \alpha (-g_{\phi} (\mathbf{x}_{1}^{tr}) \mathbf{t}_{1}^{tr\top})
-\end{equation}
 $$
 
 $\mathbf{t}_1^{tr}$ refers to the one-hot encoded class label belonging to $\mathbf{x}_1^{tr}$. In words, the features extracted for training example $\mathbf{x}_1^{tr}$ are added to column $\mathbf{w}_c$, with $c$ being the index of 1 in $\mathbf{t}_1^{tr}$. For multiple examples, the features of all training examples labeled with class $c$ are added to the $c^{th}$ column of $\mathbf{w}$.
 
-Now, for calculating the models output in the outer loop, the model computes the dot products of the columns $ \\{\mathbf{w} \\}_{c=1}^N $ and the encoded test examples $$ \begin{equation} g_{\phi}(\mathbf{x}_1^{test}) \end{equation} $$ (and takes a softmax afterwards.) To match the one-hot encoded label as good as possible, the dot product has to be large when $$ \begin{equation} \mathbf{t}_1^{test} \end{equation} $$ = $1$ at index $c$, and small otherwise. We can see that the loss enforces embedding similarity for features from the same classes, while enforcing dissimilarity for embeddings from different classes, which fits the SCL objective.
+Now, for calculating the models output in the outer loop, the model computes the dot products of the columns $ \\{\mathbf{w} \\}_{c=1}^N $ and the encoded test examples $ g_{\phi}(\mathbf{x}_1^{test}) $ (and takes a softmax afterwards.) To match the one-hot encoded label as good as possible, the dot product has to be large when $ \mathbf{t}_1^{test} $ = $1$ at index $c$, and small otherwise. We can see that the loss enforces embedding similarity for features from the same classes, while enforcing dissimilarity for embeddings from different classes, which fits the SCL objective.
 
 ## Initialization using prototypes
 A more sophisticated approach for last layer initialization in MAML is introduced in the paper
@@ -192,18 +186,17 @@ As one might guess from the name, <strong>Proto-MAML</strong> makes use of Proto
 
 Let's revise how PNs work, when used for few-shot learning, for understanding Proto-MAML afterwards:
 
-Class prototypes $$ \begin{equation} \mathbf{c}_c \end{equation} $$ are computed by averaging over each classes train example embeddings, created by a feature extractor $g_{\phi}(\mathbf{x})$. For classifying a test example, a softmax over the distances (e.g. squared euclidean distance) between class prototypes $$ \begin{equation} \mathbf{c}_c \end{equation} $$ and example embeddings $g_{\phi}(\mathbf{x}^{test})$ is used, to generate probabilities for each class.
+Class prototypes $ \mathbf{c}_c $ are computed by averaging over each classes train example embeddings, created by a feature extractor $g_{\phi}(\mathbf{x})$. For classifying a test example, a softmax over the distances (e.g. squared euclidean distance) between class prototypes $ \mathbf{c}_c $ and example embeddings $g_{\phi}(\mathbf{x}^{test})$ is used, to generate probabilities for each class.
 
 When using the squared euclidean distance, the models output logits are expressed as:
 
-$$
-\begin{equation} - \vert \vert g_{\phi}(\mathbf{x}) - \mathbf{c}_c \vert \vert^2 = −g_{\phi}(\mathbf{\mathbf{x}})^{\top} g_{\phi}(\mathbf{x}) + 2 \mathbf{c}_{c}^{\top} g_{\phi}(\mathbf{x}) − \mathbf{c}_{c}^{\top} \mathbf{c}_{c} = 2 \mathbf{c}_{c}^{\top} g_{\phi}(\mathbf{x}) − \vert \vert \mathbf{c}_{c} \vert \vert^2 + constant.
-\end{equation}
+$$ 
+- \vert \vert g_{\phi}(\mathbf{x}) - \mathbf{c}_c \vert \vert^2 = −g_{\phi}(\mathbf{\mathbf{x}})^{\top} g_{\phi}(\mathbf{x}) + 2 \mathbf{c}_{c}^{\top} g_{\phi}(\mathbf{x}) − \mathbf{c}_{c}^{\top} \mathbf{c}_{c} = 2 \mathbf{c}_{c}^{\top} g_{\phi}(\mathbf{x}) − \vert \vert \mathbf{c}_{c} \vert \vert^2 + constant.
 $$
 
-(Note that the "test" superscripts on $\mathbf{x}$ are left out for clarity.) $−g_{\phi}(\mathbf{x})^{\top} g_{\phi}(\mathbf{x})$ is disregarded here, as it's the same for all logits, and thus doesn't affect the output probabilities. When inspecting the left-over equation, we can see that it now has the shape of a linear classifier. More specifically, a linear classifier with weight vectors $$ \begin{equation} \mathbf{w}_c = 2 \mathbf{c}_c^{\top} \end{equation} $$ and biases $$ \begin{equation} b_c = \vert \vert \mathbf{c}_{c} \vert \vert^2 \end{equation} $$.
+(Note that the "test" superscripts on $\mathbf{x}$ are left out for clarity.) $−g_{\phi}(\mathbf{x})^{\top} g_{\phi}(\mathbf{x})$ is disregarded here, as it's the same for all logits, and thus doesn't affect the output probabilities. When inspecting the left-over equation, we can see that it now has the shape of a linear classifier. More specifically, a linear classifier with weight vectors $ \mathbf{w}_c = 2 \mathbf{c}_c^{\top} $ and biases $ b_c = \vert \vert \mathbf{c}_{c} \vert \vert^2 $.
 
-Proceeding to Proto-MAML, Triantafillou et al. [2020] <d-cite key="DBLP:conf/iclr/TriantafillouZD20"></d-cite> adapt vanilla MAML by initializing the classification head using the prototype weights and biases, as just discussed. The initialization happens before the inner loop for each task, and the prototypes are computed by MAMLs own feature extractor. Afterwards, the fine-tuning works as usual. Finally, when updating $\theta$ in the outer loop, the gradients flow also through the initialization of $$ \begin{equation}\mathbf{w}_c \end{equation} $$ and $b_c$, which is easy as they fully depend on $$ \begin{equation} g_{\phi}(\mathbf{x})\end{equation} $$.
+Proceeding to Proto-MAML, Triantafillou et al. [2020] <d-cite key="DBLP:conf/iclr/TriantafillouZD20"></d-cite> adapt vanilla MAML by initializing the classification head using the prototype weights and biases, as just discussed. The initialization happens before the inner loop for each task, and the prototypes are computed by MAMLs own feature extractor. Afterwards, the fine-tuning works as usual. Finally, when updating $\theta$ in the outer loop, the gradients flow also through the initialization of $\mathbf{w}_c $ and $b_c$, which is easy as they fully depend on $ g_{\phi}(\mathbf{x})$.
 
 Note, that because of computational reasons, Triantafillou refer to Proto-MAML as (FO-)Proto-MAML.
 
