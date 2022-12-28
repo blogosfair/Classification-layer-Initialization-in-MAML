@@ -49,7 +49,7 @@ In a previous study, Raghu et al. [2020] <d-cite key="DBLP:conf/iclr/RaghuRBV20"
 
 First, it is difficult to imagine that a single set of optimal weights can be learned. This becomes apparent when considering class label permutations: two different tasks may have the same classes, but in a different order. As a result, the weights that perform well for the first task will likely not be effective for the second task. This is reflected in the fact that MAML's performance can vary by up to 15% depending on the class label assignments during testing <d-cite key="DBLP:conf/iclr/YeC22"></d-cite>.
 
-Second, more challenging datasets are being proposed as few-shot learning benchmarks, such as Meta-Dataset <d-cite key="DBLP:conf/iclr/TriantafillouZD20"></d-cite>]. These datasets have varying numbers of classes per task, making it impossible to learn a single set of weights for the classification layer.
+Second, more challenging datasets are being proposed as few-shot learning benchmarks, such as Meta-Dataset <d-cite key="DBLP:conf/iclr/TriantafillouZD20"></d-cite>. These datasets have varying numbers of classes per task, making it impossible to learn a single set of weights for the classification layer.
 
 Therefore, it seems logical to consider how to initialize the final classification layer before fine-tuning on a new task. Random initialization may not be optimal, as it can introduce unnecessary noise <d-cite key="DBLP:conf/iclr/KaoCC22"></d-cite>. 
 
@@ -85,7 +85,7 @@ The first two MAML-variants we'll look at, approach the initialization task by i
 <span>&nbsp;&nbsp;&nbsp;&#9654;&nbsp;&nbsp;</span>Han-Jia Ye & Wei-Lun Chao (ICLR, 2022) How to train your MAML to excel in few-shot classification <d-cite key="DBLP:conf/iclr/YeC22"></d-cite>,
 <p></p>
 
-an approach called <strong>Unicorn MAML</strong> is presented. It is explicitly motivated by the effect that different class-label assignments can have. Ye & Chao [2022] <d-cite key="DBLP:conf/iclr/YeC22"></d-cite> report that during testing, vanilla MAML can perform very differently for <ins>tasks with the same set of classes</ins>, which are just <ins>differently ordered</ins>. Namely, they report that classification accuracy can vary up to 15% on the one-shot setting, and up to 8% in the 5-shot setting. This makes MAMLs performance quite unstable.
+an approach called <strong>UnicornMAML</strong> is presented. It is explicitly motivated by the effect that different class-label assignments can have. Ye & Chao [2022] <d-cite key="DBLP:conf/iclr/YeC22"></d-cite> report that during testing, vanilla MAML can perform very differently for <ins>tasks with the same set of classes</ins>, which are just <ins>differently ordered</ins>. Namely, they report that classification accuracy can vary up to 15% on the one-shot setting, and up to 8% in the 5-shot setting. This makes MAMLs performance quite unstable.
 <br/><br/>
 
 
@@ -113,16 +113,16 @@ This collapses the models meta-parameters to $ \theta = \\{\mathbf{w}, \phi\\} $
 {% include figure.html path="assets/img/2022-12-01-classification-layer-initialization-in-maml/unicorn_maml_final.png" class="img-fluid" %}
 
 <p align = "center">
-<em>Fig.2 Overview of Unicorn MAML. We can see that class label permutations don't matter anymore, as before fine-tuning, the probability of predicting each class is the same.</em>
+<em>Fig.2 Overview of UnicornMAML. We can see that class label permutations don't matter anymore, as before fine-tuning, the probability of predicting each class is the same.</em>
 </p>
 
-This tweak to vanilla MAML makes Unicorn MAML permutation invariant, as models fine-tuned on tasks including the same categories - just differently ordered - will now yield the same output predictions. Also, the method could be used with datasets, where the number of classes varies, without any further adaptation: It doesn't matter how many classification head weight vectors are initialized by the single meta classification head weight vector.
+This tweak to vanilla MAML makes UnicornMAML permutation invariant, as models fine-tuned on tasks including the same categories - just differently ordered - will now yield the same output predictions. Also, the method could be used with datasets, where the number of classes varies, without any further adaptation: It doesn't matter how many classification head weight vectors are initialized by the single meta classification head weight vector.
 
 Furthermore, the uniform initialization in Unicorn-MAML addresses the problem of memorization overfitting <d-cite key="DBLP:conf/iclr/YinTZLF20"></d-cite>. The phenomenon describes a scenario, where a single model can learn all the training tasks only from the test data in the outer loop. This leads to a model that learns to perform the training tasks, but also to a model that doesn't do any fine-tuning, and thus fails do generalize to unseen tasks. Again, the uniform initialization of the classification head for all classes forces the model to adapt during fine-tuning, and thus prevents memorization overfitting.
 
 The approach is reported to perform on par with recent few-shot algorithms.
 
-Let's finally think of how to interpret Unicorn MAML: When meta-learning only a single classification head vector, one could say that not a mapping from features to classes is tried to be learned anymore, but a prioritization of features, which seemed to be more relevant for the classification decision across tasks, than others.
+Let's finally think of how to interpret UnicornMAML: When meta-learning only a single classification head vector, one could say that not a mapping from features to classes is tried to be learned anymore, but a prioritization of features, which seemed to be more relevant for the classification decision across tasks, than others.
 
 ## Zero initialization
 The second approach for a uniform initialization is proposed in the paper
@@ -146,7 +146,7 @@ An overview of MAML with the zeroing trick is displayed below:
 
 Note that $S_n$ and $Q_n$ refer to $\mathcal{D_{i}^{tr}}$ and $\mathcal{D_{i}^{test}}$ in this notation.
 
-Through applying the zero initialization, three of the problems addressed by Unicorn MAML, are solved as well: - MAML with the zeroing trick applied leads to random predictions before fine-tuning. This solves the problem of class
+Through applying the zero initialization, three of the problems addressed by UnicornMAML, are solved as well: - MAML with the zeroing trick applied leads to random predictions before fine-tuning. This solves the problem of class
 label assignment permutations during testing.
 - Through the random predictions before fine-tuning, memorization overfitting is prevented as well.
 - The zeroing trick makes MAML applicable for datasets with a varying number of classes per task.
@@ -223,18 +223,18 @@ To conclude, we've seen that a variety of problems can be tackled by using initi
 
 Furthermore, for all the approaches presented, a decent gain in performance is reported in comparison to vanilla MAML. It seems therefore very reasonable to spend some time thinking about last layer initialization.
 
-Looking at the problems mentioned, and variants discussed in more detail, we can state that all the different variants make MAML <ins>permutation invariant with regard to class label assignments</ins>. Unicorn MAML and the zeroing trick solve it by uniform initialization of $\mathbf{w}$. In Proto-MAML, the initialization happens with regard to the class label assignment, so it's permutation invariant as well.
+Looking at the problems mentioned, and variants discussed in more detail, we can state that all the different variants make MAML <ins>permutation invariant with regard to class label assignments</ins>. UnicornMAML and the zeroing trick solve it by uniform initialization of $\mathbf{w}$. In Proto-MAML, the initialization happens with regard to the class label assignment, so it's permutation invariant as well.
 
-Also, all variants are compatible with <ins>datasets where the number of classes per task varies</ins>. In Unicorn MAML, an arbitrary number of classification head vectors can be initialized with the single meta-learned classification head weight vector. When zero-initializing the classification head, the number of classes per task does not matter as well. In Proto-MAML, prototypes can be computed for an arbitrary number of classes, so again, the algorithm works on such a dataset without further adaption.
+Also, all variants are compatible with <ins>datasets where the number of classes per task varies</ins>. In UnicornMAML, an arbitrary number of classification head vectors can be initialized with the single meta-learned classification head weight vector. When zero-initializing the classification head, the number of classes per task does not matter as well. In Proto-MAML, prototypes can be computed for an arbitrary number of classes, so again, the algorithm works on such a dataset without further adaption.
 
-Next, Unicorn MAML and the zeroing trick solve <ins>memorization overfitting</ins>, again by initializing $\mathbf{w}$ uniformly for all classes. Proto-MAML solves memorization overfitting as well, as the task-specific initialization of $\mathbf{w}$ itself can be interpreted as fine-tuning.
+Next, UnicornMAML and the zeroing trick solve <ins>memorization overfitting</ins>, again by initializing $\mathbf{w}$ uniformly for all classes. Proto-MAML solves memorization overfitting as well, as the task-specific initialization of $\mathbf{w}$ itself can be interpreted as fine-tuning.
 
-<ins>Cross-task interference</ins> and <ins>initialization interference</ins> are solved by the zeroing trick. For the other models, this is harder to say, as the derivations made by [Kao et al.](#Kao) are quite case specific. Intuitively, Proto-MAML should solve cross-task interference, as the classification head is reinitialized after each task. Initialization interference is not solved by either ProtoMAML or Unicorn MAML, as random initialization remains.
+<ins>Cross-task interference</ins> and <ins>initialization interference</ins> are solved by the zeroing trick. For the other models, this is harder to say, as the derivations made by [Kao et al.](#Kao) are quite case specific. Intuitively, Proto-MAML should solve cross-task interference, as the classification head is reinitialized after each task. Initialization interference is not solved by either ProtoMAML or UnicornMAML, as random initialization remains.
 
 Note that in a discussion with a reviewer, [Kao et al.](#kao) state that the main results they show are achieved by models which had the zeroing trick implemented, but which didn't follow the EFIL assumption. They argue that using only the zeroing trick still enhances the supervised contrastiveness. This kind of puts their whole theory into perspective, as without the EFIL assumption, MAML with the zeroing trick is neither an SCL algorithm nor a noisy SCL algorithm. Still, noteable performance gains are reported though.
 
-The question arises, whether the whole theoretical background is needed, or whether the zeroing tricks benefit is mainly the uniform initialization, like in Unicorn MAML. It would be nice to see how the single learned initialization vector in Unicorn MAML turns out to be shaped, and how it compares to the zeroing trick. While the zeroing trick reduces cross-task noise and initialization noise, a single initialization vector can weight some features as more important than others for the final classification decision across tasks.
+The question arises, whether the whole theoretical background is needed, or whether the zeroing tricks benefit is mainly the uniform initialization, like in UnicornMAML. It would be nice to see how the single learned initialization vector in UnicornMAML turns out to be shaped, and how it compares to the zeroing trick. While the zeroing trick reduces cross-task noise and initialization noise, a single initialization vector can weight some features as more important than others for the final classification decision across tasks.
 
 In contrast to the uniform initialization approaches, we have seen Proto-MAML, where class-specific classification head vectors are computed for initialization, based on the training data.
 
-Finally, Ye et al. [2022] <d-cite key="DBLP:conf/iclr/YeC22"></d-cite> compare the performance between Proto-MAML and Unicorn MAML on MiniImageNet and TieredImageNet. Unicorn MAML performs slightly better here, in the one- and five-shot setting. Kao et al. [2020] <d-cite key="DBLP:conf/iclr/KaoCC22"></d-cite> don't report any particular numbers for their zeroing trick.
+Finally, Ye et al. [2022] <d-cite key="DBLP:conf/iclr/YeC22"></d-cite> compare the performance between Proto-MAML and UnicornMAML on MiniImageNet and TieredImageNet. UnicornMAML performs slightly better here, in the one- and five-shot setting. Kao et al. [2020] <d-cite key="DBLP:conf/iclr/KaoCC22"></d-cite> don't report any particular numbers for their zeroing trick.
