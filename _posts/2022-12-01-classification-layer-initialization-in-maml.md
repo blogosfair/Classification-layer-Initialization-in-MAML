@@ -173,7 +173,7 @@ $$
 
 $\mathbf{t}_1^{tr}$ refers to the one-hot encoded class label belonging to $\mathbf{x}_1^{tr}$. In words, the features extracted for training example $\mathbf{x}_1^{tr}$ are added to column $\mathbf{w}_c$, with $c$ being the index of 1 in $\mathbf{t}_1^{tr}$. For multiple examples, the features of all training examples labeled with class $c$ are added to the $c^{th}$ column of $\mathbf{w}$.
 
-Now, for calculating the models output in the outer loop, the model computes the dot products of the columns $ \\{\mathbf{w} \\}_{c=1}^N $ and the encoded test examples $ g_{\phi}(\mathbf{x}_1^{test}) $ (and takes a softmax afterwards.) To match the one-hot encoded label as good as possible, the dot product has to be large when $ \mathbf{t}_1^{test} $ = $1$ at index $c$, and small otherwise. We can see that the loss enforces embedding similarity for features from the same classes, while enforcing dissimilarity for embeddings from different classes, which fits the SCL objective.
+Now, for calculating the models output in the outer loop, the model computes the dot products of the columns $$ \\{\mathbf{w} \\}_{c=1}^N $$ and the encoded test examples $$ g_{\phi}(\mathbf{x}_1^{test}) $$ (and takes a softmax afterwards.) To match the one-hot encoded label as good as possible, the dot product has to be large when $$ \mathbf{t}_1^{test} $$ = $$1$$ at index $$c$$, and small otherwise. We can see that the loss enforces embedding similarity for features from the same classes, while enforcing dissimilarity for embeddings from different classes, which fits the SCL objective.
 
 ## Initialization using prototypes
 A more sophisticated approach for last layer initialization in MAML is introduced in the paper
