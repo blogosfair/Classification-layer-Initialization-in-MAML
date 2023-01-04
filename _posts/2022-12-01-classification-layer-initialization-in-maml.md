@@ -199,7 +199,7 @@ Note that the "test" superscripts on $\mathbf{x}$ are left out for clarity. $$âˆ
 
 Proceeding to Proto-MAML, Triantafillou et al. [2020] <d-cite key="DBLP:conf/iclr/TriantafillouZD20"></d-cite> adapt vanilla MAML by initializing the classification head using the prototype weights and biases, as just discussed. The initialization happens before the inner loop for each task, and the prototypes are computed by MAMLs own feature extractor. Afterwards, the fine-tuning works as usual. Finally, when updating $\theta$ in the outer loop, the gradients flow also through the initialization of $$\mathbf{w}_c $$ and $$b_c$$, which is easy as they fully depend on $$ g_{\phi}(\mathbf{x})$$.
 
-Note, that because of computational reasons, Triantafillou refer to Proto-MAML as (FO-)Proto-MAML.
+Note, that because of computational reasons, Triantafillou et al. [2020] <d-cite key="DBLP:conf/iclr/TriantafillouZD20"></d-cite> refer to Proto-MAML as (FO-)Proto-MAML.
 
 With Proto-MAML, one gets a task-specific, data-dependent initialization in a simple fashion, which seems super nice. For computing the models output logits after classification head initialization, dot products between class prototypes and embedded examples are computed, which again seems very reasonable.
 
