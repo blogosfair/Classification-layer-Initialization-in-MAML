@@ -1,13 +1,14 @@
 ---
 layout: distill
 title: Strategies for Classification Layer Initialization in Model-Agnostic Meta-Learning
-description: [Your blog's abstract - a short description of what your blog is about]
+description: [This blog post discusses different strategies for initializing the classification layers parameters before 
+fine-tuning on a new task in Model-Agnostic Meta-Learning.]
 date: 2022-12-01
 htmlwidgets: true
 
 # anonymize when submitting 
 authors:
-  - name: Anonymous 
+  - name: Anonymous
 
 # do not fill this in until your post is accepted and you're publishing your camera-ready post!
 # authors:
