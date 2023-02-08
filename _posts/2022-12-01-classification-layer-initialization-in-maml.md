@@ -158,8 +158,8 @@ More specifically, they show that the outer-loop update for the encoder follows 
 1. The encoder weights are frozen in the inner loop (EFIL assumption)
 2. There is only a single inner loop update step.<d-footnote>Note that FOMAML technically follows a noisy SCL loss without this assumption. However, when applying the zeroing trick, this assumption is needed again for stating that the encoder update is following an SCL loss</d-footnote>
 
-A noisy SCL loss means that cases can occur where the loss forces the model to maximize similarities between embeddings from samples of different classes. The outer-loop encoder loss in this setting contains an "interference term" which causes the model to pull together embeddings from different tasks or to pull embeddings into a random direction, with the randomness being introduced by random initialization of the classification head. Those two phenomena are termed <ins>cross-task interference</ins>
-and <ins>initialization interference</ins>. Noise and interference in the loss vanish when applying the zeroing trick, and the outer-loop encoder loss turns into a proper SCL loss. Meaning that minimizing this loss forces embeddings of the same class/task together while pushing embeddings from the same task and different classes apart. A decent increase in performance is observed for MAML with the zeroing trick compared to vanilla MAML.
+A noisy SCL loss means that cases can occur where the loss forces the model to maximize similarities between embeddings from samples of different classes. The outer-loop encoder loss in this setting contains an "interference term" which causes the model to pull together embeddings from different tasks or to pull embeddings into a random direction, with the randomness being introduced by random initialization of the classification head. Those two phenomena are termed *cross-task interference*
+and *initialization interference*. Noise and interference in the loss vanish when applying the zeroing trick, and the outer-loop encoder loss turns into a proper SCL loss. Meaning that minimizing this loss forces embeddings of the same class/task together while pushing embeddings from the same task and different classes apart. A decent increase in performance is observed for MAML with the zeroing trick compared to vanilla MAML.
 
 Those findings are derived using a general formulation of MAML, with a cross-entropy loss, and the details are available in the paper <d-cite key="DBLP:conf/iclr/KaoCC22"></d-cite>. Also, a slightly simpler example is stated to give an intuition of MAMLs SCL properties. We will briefly summarize it in the following to share this intuition with you. 
 
@@ -194,7 +194,7 @@ When using the squared euclidean distance, the model's output logits are express
 
 $$ 
 \begin{align*}
--& \vert \vert g_{\phi}(\mathbf{x}) - \mathbf{c}_c \vert \vert^2 \\ =& −g_{\phi}(\mathbf{\mathbf{x}})^{\top} g_{\phi}(\mathbf{x}) + 2 \mathbf{c}_{c}^{\top} g_{\phi}(\mathbf{x}) − \mathbf{c}_{c}^{\top} \mathbf{c}_{c} \\ =& 2 \mathbf{c}_{c}^{\top} g_{\phi}(\mathbf{x}) − \vert \vert \mathbf{c}_{c} \vert \vert^2 + constant.
+&- \vert \vert g_{\phi}(\mathbf{x}) - \mathbf{c}_c \vert \vert^2 \\ =& −g_{\phi}(\mathbf{\mathbf{x}})^{\top} g_{\phi}(\mathbf{x}) + 2 \mathbf{c}_{c}^{\top} g_{\phi}(\mathbf{x}) − \mathbf{c}_{c}^{\top} \mathbf{c}_{c} \\ =& 2 \mathbf{c}_{c}^{\top} g_{\phi}(\mathbf{x}) − \vert \vert \mathbf{c}_{c} \vert \vert^2 + constant.
 \end{align*}
 $$
 
