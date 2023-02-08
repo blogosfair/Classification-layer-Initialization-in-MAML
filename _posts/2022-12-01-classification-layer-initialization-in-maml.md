@@ -193,7 +193,7 @@ For classifying a test example, a softmax over the distances (e.g. squared eucli
 When using the squared euclidean distance, the models output logits are expressed as:
 
 $$ 
-- \vert \vert g_{\phi}(\mathbf{x}) - \mathbf{c}_c \vert \vert^2 = −g_{\phi}(\mathbf{\mathbf{x}})^{\top} g_{\phi}(\mathbf{x}) + 2 \mathbf{c}_{c}^{\top} g_{\phi}(\mathbf{x}) − \mathbf{c}_{c}^{\top} \mathbf{c}_{c} = 2 \mathbf{c}_{c}^{\top} g_{\phi}(\mathbf{x}) − \vert \vert \mathbf{c}_{c} \vert \vert^2 + constant.
+- \vert \vert g_{\phi}(\mathbf{x}) - \mathbf{c}_c \vert \vert^2 \\ = −g_{\phi}(\mathbf{\mathbf{x}})^{\top} g_{\phi}(\mathbf{x}) + 2 \mathbf{c}_{c}^{\top} g_{\phi}(\mathbf{x}) − \mathbf{c}_{c}^{\top} \mathbf{c}_{c} \\ = 2 \mathbf{c}_{c}^{\top} g_{\phi}(\mathbf{x}) − \vert \vert \mathbf{c}_{c} \vert \vert^2 + constant.
 $$
 
 Note that the "test" superscripts on $\mathbf{x}$ are left out for clarity. $$−g_{\phi}(\mathbf{x})^{\top} g_{\phi}(\mathbf{x})$$ is disregarded here, as it's the same for all logits, and thus doesn't affect the output probabilities. When inspecting the left-over equation, we can see that it now has the shape of a linear classifier. More specifically, a linear classifier with weight vectors $$ \mathbf{w}_c = 2 \mathbf{c}_c^{\top} $$ and biases $$ b_c = \vert \vert \mathbf{c}_{c} \vert \vert^2 $$.
