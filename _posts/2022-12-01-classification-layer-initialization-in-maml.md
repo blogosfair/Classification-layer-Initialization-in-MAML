@@ -147,7 +147,8 @@ An overview of MAML with the zeroing trick is displayed below:
 
 Note that $S_n$ and $Q_n$ refer to $\mathcal{D_{i}^{tr}}$ and $\mathcal{D_{i}^{test}}$ in this notation.
 
-Through applying the zero initialization, three of the problems addressed by UnicornMAML are solved as well: - MAML with the zeroing trick applied leads to random predictions before fine-tuning. This solves the problem of class
+Through applying the zero initialization, three of the problems addressed by UnicornMAML are solved as well:
+- MAML with the zeroing trick applied leads to random predictions before fine-tuning. This solves the problem of class
 label assignment permutations during testing.
 - Through the random predictions before fine-tuning, memorization overfitting is prevented as well.
 - The zeroing trick makes MAML applicable for datasets with a varying number of classes per task.
