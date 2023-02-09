@@ -96,7 +96,7 @@ an approach called <strong>UnicornMAML</strong> is presented. It is explicitly m
 <em>Fig.1 Example of MAML and a class label permutation. We can see the randomness introduced, as $\mathbf{w_1}$ is supposed to interpret the input features as "unicorn" for the first task, and as "bee" for the second. For both tasks, the class outputted as a prediction should be the same, as in human perception, both tasks are identical. This, however, is obviously not the case.</em>
 </p>
 
-The solution proposed is fairly simple: Instead of meta-learning $N$ weight vectors for the final layer, only learn a <ins>single vector</ins> $\mathbf{w}$ is meta-learned and used to initialize all $ \\{ \mathbf{w} \\}_{c=1}^N $ before the fine-tuning stage.
+The solution proposed is fairly simple: Instead of meta-learning $N$ weight vectors for the final layer, only a <ins>single vector</ins> $\mathbf{w}$ is meta-learned and used to initialize all $ \\{ \mathbf{w} \\}_{c=1}^N $ before the fine-tuning stage.
 
 This forces the model to make random predictions before the inner loop, as $\hat{y_c}= h_{\mathbf{w}} (g_{\phi} (\mathbf{x}), c)$ will be the same for all $c \in [1,...,N ]$.
 
