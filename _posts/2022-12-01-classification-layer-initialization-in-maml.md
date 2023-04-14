@@ -139,7 +139,25 @@ This collapses the models meta-parameters to $ \theta = \\{\mathbf{w}, \phi\\} $
 
 This tweak to vanilla MAML makes UnicornMAML permutation invariant, as models fine-tuned on tasks including the same categories - just differently ordered - will now yield the same output predictions. Also, the method could be used with datasets where the number of classes varies without any further adaptation: It doesn't matter how many classification head weight vectors are initialized by the single meta-classification head weight vector.
 
-Furthermore, the uniform initialization in Unicorn-MAML addresses the problem of memorization overfitting <d-cite key="DBLP:conf/iclr/YinTZLF20"></d-cite>. The phenomenon describes a scenario where a single model can learn all the training tasks only from the test data in the outer loop. This leads to a model that learns to perform the training tasks but also to a model that doesn't do any fine-tuning and thus fails to generalize to unseen tasks. Again, the uniform initialization of the classification head for all classes forces the model to adapt during fine-tuning and thus prevents memorization overfitting.
+Furthermore, the uniform initialization in Unicorn-MAML addresses the problem of memorization overfitting <d-cite key="DBLP:conf/iclr/YinTZLF20"></d-cite>. 
+The phenomenon describes a scenario where a single model can learn all the training tasks only from the test data in the outer loop. 
+This leads to a model that learns to perform the training tasks but also to a model that doesn't do any fine-tuning and thus fails to generalize to unseen tasks.
+
+Yin et al. [2020] <d-cite key="DBLP:conf/iclr/YinTZLF20"></d-cite> illustrate memorization overfitting using a simple example: Imagine a 3D pose prediction problem,
+where each task consists of 2D pictures of a certain object. The objects are rotated by some angle from an (unknown) canonical pose in every picture.
+Each picture is labelled by the angle, by which the object is rotated from the objects canonical pose.
+
+In a memorization overfitting scenario, a model 
+would memorize the canonical pose of all the objects shown during training. 
+This way, the model doesn't need to adapt anymore during fine-tuning in the meta-training phase. It could just recognize which object it is looking at,
+and calculate the angle from the remembered canonical pose.\\
+This becomes a problem, when unseen objects are shown to the model during meta-testing. Here, it would be critical to infer
+the canonical pose form the training examples to correctly infer the rotation angle for the test examples. This, however,
+was not learned by the model in this example.
+
+When uniformly initializaing of the classification head for all classe, one forces the model to adapt during fine-tuning, 
+as otherwise it would predict only at chance level.
+This prevents memorization overfitting.
 
 The approach is reported to perform on par with recent few-shot algorithms.
 
