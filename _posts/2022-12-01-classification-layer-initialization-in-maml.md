@@ -33,6 +33,7 @@ bibliography: 2022-12-01-classification-layer-initialization-in-maml.bib
 #     for hyperlinks within the post to work correctly.
 toc:
   - name: Introduction
+  - name: What is Meta-Learning?
   - name: Quick recap on MAML
   - name: Learning a single initialization vector
   - name: Zero initialization
@@ -55,6 +56,25 @@ Second, more challenging datasets are being proposed as few-shot learning benchm
 Therefore, it seems logical to consider how to initialize the final classification layer before fine-tuning on a new task. Random initialization may not be optimal, as it can introduce unnecessary noise <d-cite key="DBLP:conf/iclr/KaoCC22"></d-cite>. 
 
 This blog post will discuss different approaches to last layer initialization that claim to outperform the original MAML method.
+
+## What is Meta-Learning?
+
+Before diving into the topic, let's look at the general idea of meta-learning. In traditional, supervised machine learning, tasks are learned using a large number of labeled examples.
+Acquiring a sufficient amount of labeled data, however, can be labour extensive. Also, this approach to machine learning evidently deviates from the human learning process; a child is certainly
+able to learn what a specific object is, using only a few examples, and not hundreds or thousands.
+This is where meta-learning comes in. Its goal can be described as acquiring the ability to learn new tasks from only a few examples <d-cite key="9428530"></d-cite>
+
+There is not one fixed framework to meta-meta learning, however, a common approach is based on the principle, that train and test conditions must match <d-cite key="vinyals2016matching"></d-cite>.\\
+Let's look at this in more detail, for the case of few-shot classification. Here, the meta-learning goal
+can be verbalized as "learning to learn new classes from few examples" <d-cite key="DBLP:conf/iclr/TriantafillouZD20"></d-cite>. When evaluating a meta-learner, one needs a training set $$
+\mathcal{D^{tr}} = ((\mathbf{x}_1, y_1), (\mathbf{x}_2, y_2), (\mathbf{x}_3, y_3), ...)$$, consisting of labeled examples for unseen classes.
+Those are used by the meta-learner to adapt to the novel task. How well the meta-learner performs, can then be evaluated on labeled examples from the same classes: $$
+\mathcal{D^{test}} = ((\mathbf{x}_{1}^{\ast}, y_{1}^{\ast}), (\mathbf{x}_{2}^{\ast}, y_{2}^{\ast}), (\mathbf{x}_{3}^{\ast}, y_{3}^{\ast}), ...)$$. The combination of such a training and test set is referred to
+as an episode or a task: $\mathcal{T} = (\mathcal{D^{tr}}, \mathcal{D^{test}})$.
+
+For matching the conditions for training and evaluation, one would split all available classes with their examples into a dateset for meta-training $$\mathcal{C}_{train}$$ and a dataset for 
+meta-testing $$\mathcal{C}_{test}$$. Tasks are then drawn from those datasets, for either training or testing purposes. A possible approach for training phase could be: Fine-tune the meta-learner
+using $$\mathcal{D^{tr}}$$, evaluate its performance on $$\mathcal{D^{test}}$$, and finally update the model based on the evaluation error. 
 
 ## Quick recap on MAML
 Model-Agnostic Meta-Learning (MAML) <d-cite key="DBLP:conf/icml/FinnAL17"></d-cite> is a well-established algorithm in the field of optimization-based meta-learning. Its goal is to find parameters $\theta$ for a parametric model $f_{\theta}$ that can be efficiently adapted to perform an unseen task from the same task distribution, using only a few training examples. The pre-training of $\theta$ is done using two nested loops (bi-level optimization), with meta-training occurring in the outer loop and task-specific fine-tuning in the inner loop. The task-specific fine-tuning is typically done using a few steps of gradient descent:
@@ -93,7 +113,7 @@ an approach called <strong>UnicornMAML</strong> is presented. It is explicitly m
 {% include figure.html path="assets/img/2022-12-01-classification-layer-initialization-in-maml/perm_final.png" class="img-fluid" %}
 
 <p align = "center">
-<em>Fig.1 Example of MAML and a class label permutation. We can see the randomness introduced, as $\mathbf{w_1}$ is supposed to interpret the input features as "unicorn" for the first task, and as "bee" for the second. For both tasks, the class outputted as a prediction should be the same, as in human perception, both tasks are identical. This, however, is obviously not the case.</em>
+<em>Fig.1 Example of MAML and a class label permutation <d-cite key="DBLP:conf/iclr/YeC22"></d-cite>. We can see the randomness introduced, as $\mathbf{w_1}$ is supposed to interpret the input features as "unicorn" for the first task, and as "bee" for the second. For both tasks, the class outputted as a prediction should be the same, as in human perception, both tasks are identical. This, however, is obviously not the case.</em>
 </p>
 
 The solution proposed is fairly simple: Instead of meta-learning $N$ weight vectors for the final layer, only a <ins>single vector</ins> $\mathbf{w}$ is meta-learned and used to initialize all $ \\{ \mathbf{w} \\}_{c=1}^N $ before the fine-tuning stage.
@@ -114,7 +134,7 @@ This collapses the models meta-parameters to $ \theta = \\{\mathbf{w}, \phi\\} $
 {% include figure.html path="assets/img/2022-12-01-classification-layer-initialization-in-maml/unicorn_maml_final.png" class="img-fluid" %}
 
 <p align = "center">
-<em>Fig.2 Overview of UnicornMAML. We can see that class label permutations don't matter anymore, as before fine-tuning, the probability of predicting each class is the same.</em>
+<em>Fig.2 Overview of UnicornMAML <d-cite key="DBLP:conf/iclr/YeC22"></d-cite>. We can see that class label permutations don't matter anymore, as before fine-tuning, the probability of predicting each class is the same.</em>
 </p>
 
 This tweak to vanilla MAML makes UnicornMAML permutation invariant, as models fine-tuned on tasks including the same categories - just differently ordered - will now yield the same output predictions. Also, the method could be used with datasets where the number of classes varies without any further adaptation: It doesn't matter how many classification head weight vectors are initialized by the single meta-classification head weight vector.
@@ -142,7 +162,7 @@ An overview of MAML with the zeroing trick is displayed below:
 
 
 <p align = "center">
-<em>Fig.3 MAML with the zeroing trick applied.</em>
+<em>Fig.3 MAML with the zeroing trick applied <d-cite key="DBLP:conf/iclr/KaoCC22"></d-cite>.</em>
 </p>
 
 Note that $S_n$ and $Q_n$ refer to $\mathcal{D_{i}^{tr}}$ and $\mathcal{D_{i}^{test}}$ in this notation.
