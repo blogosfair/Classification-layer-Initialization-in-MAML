@@ -193,7 +193,14 @@ label assignment permutations during testing.
 - Through the random predictions before fine-tuning, memorization overfitting is prevented as well.
 - The zeroing trick makes MAML applicable for datasets with a varying number of classes per task.
 
-Interestingly, the motivation for applying the zeroing trick, stated by Kao et al. [2022] <d-cite key="DBLP:conf/iclr/KaoCC22"></d-cite>, is entirely different. In general, Kao et al. [2022] <d-cite key="DBLP:conf/iclr/KaoCC22"></d-cite> want to unveil in what sense MAML encourages its models to learn general-purpose feature representations. They show that under some assumptions, there is a supervised contrastive learning (SCL) objective underlying MAML. In SCL, the label information is leveraged by pulling embeddings belonging to the same class closer together while increasing the embedding distances of samples from different classes <d-cite key="DBLP:conf/nips/KhoslaTWSTIMLK20"></d-cite>.
+Interestingly, the motivation for applying the zeroing trick, stated by Kao et al. [2022] <d-cite key="DBLP:conf/iclr/KaoCC22"></d-cite>, is entirely different. In general, Kao et al. [2022] <d-cite key="DBLP:conf/iclr/KaoCC22"></d-cite> want to unveil in what sense MAML encourages its models to learn general-purpose feature representations. 
+They show that under some assumptions, there is a supervised contrastive learning (SCL) objective underlying MAML.
+
+In SCL, the label information is leveraged by pulling embeddings belonging to the same class closer together while increasing 
+the embedding distances of samples from different classes <d-cite key="DBLP:conf/nips/KhoslaTWSTIMLK20"></d-cite>.
+This is achieved by contrasting examples within a batch to each other. If two examples share the same label, the SCL loss is designed
+to increase their embeddings' similarity. If the label differs, it enforces the examples embedding similarity to decrease.
+The SCL loss contains an explicit similarity measure, which distinguishes it from supervised learning.
 
 More specifically, they show that the outer-loop update for the encoder follows a noisy SCL loss under the following assumptions:
 1. The encoder weights are frozen in the inner loop (EFIL assumption)
