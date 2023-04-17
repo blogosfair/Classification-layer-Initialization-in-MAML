@@ -50,7 +50,7 @@ toc:
 In a previous study, Raghu et al. [2020] <d-cite key="DBLP:conf/iclr/RaghuRBV20"></d-cite> found that in model-agnostic meta-learning (MAML) for few-shot classification, the majority of changes observed in the network during the inner loop fine-tuning process occurred in the linear classification head. It is commonly believed that during this phase, the linear head remaps encoded features to the classes of the new task. In
 traditional MAML, the weights of the final linear layer are meta-learned in the usual way. However, there are some issues with this approach:
 
-First, it is difficult to imagine that a single set of optimal weights can be learned. This becomes apparent when considering class label permutations: two different tasks may have the same classes but in a different order. As a result, the weights that perform well for the first task will likely not be effective for the second task. This is reflected in the fact that MAML's performance can vary by up to 15% depending on the class label assignments during testing <d-cite key="DBLP:conf/iclr/YeC22"></d-cite>.
+First, it is difficult to imagine that a single set of optimal classification head weights can be learned. This becomes apparent when considering class label permutations: two different tasks may have the same classes but in a different order. As a result, the weights that perform well for the first task will likely not be effective for the second task. This is reflected in the fact that MAML's performance can vary by up to 15% depending on the class label ordering during testing <d-cite key="DBLP:conf/iclr/YeC22"></d-cite>.
 
 Second, more challenging datasets are being proposed as few-shot learning benchmarks, such as Meta-Dataset <d-cite key="DBLP:conf/iclr/TriantafillouZD20"></d-cite>. These datasets have varying numbers of classes per task, making it impossible to learn a single set of weights for the classification layer.
 
@@ -97,12 +97,12 @@ Here, $\eta$ is the meta-learning rate. The differentiation through the inner lo
 
 It is worth noting that in practical scenarios, this second-order differentiation is computationally expensive, and approximation methods such as first-order MAML (FOMAML) <d-cite key="DBLP:conf/icml/FinnAL17"></d-cite> or Reptile <d-cite key="DBLP:journals/corr/abs-1803-02999"></d-cite> are often used. In FOMAML, the outer loop update is simply: $$ \theta' = \theta - \eta\nabla_{\theta'} \sum_{\mathcal{T_{i}} \sim p(\mathcal{T})}^{}\mathcal{L_{\mathcal{T_{i}}}}(\theta_{i}', \mathcal{D^{test}}) $$, which avoids differentiating through the inner loop.
 
-Before proceeding, let's prepare ourselves for the next sections by looking at the notation we can use when discussing MAML in the few-shot classification regime: The model's output prediction can be described as $\hat{y} = f_{\theta}(\mathbf{x}) = \underset{c\in[N]}{\mathrm{argmax}} ; h_{\mathbf{w}} (g_{\phi}(\mathbf{x}), c)$, where we divide our model $f_{\theta}(\mathbf{x})$ (which takes an input $\mathbf{x}$) into a feature extractor $g_{\phi}(\mathbf{x})$ and a classifier $h_\mathbf{w}(\mathbf{r}, c)$, which is parameterized by classification head weight vectors ${\mathbf{w}}_{c=1}^N$. $\mathbf{r}$ denotes an input's representation, and $c$ is the index of the class we want the output prediction for.
+Before proceeding, let's prepare ourselves for the next sections by looking at the notation we can use when discussing MAML in the few-shot classification regime: The model's output prediction can be described as $\hat{y} = f_{\theta}(\mathbf{x}) = \underset{c\in[N]}{\mathrm{argmax}} h_{\mathbf{w}} (g_{\phi}(\mathbf{x}), c)$, where we divide our model $f_{\theta}(\mathbf{x})$ (which takes an input $\mathbf{x}$) into a feature extractor $g_{\phi}(\mathbf{x})$ and a classifier $h_\mathbf{w}(\mathbf{r}, c)$, which is parameterized by classification head weight vectors ${\mathbf{w}}_{c=1}^N$. $\mathbf{r}$ denotes an input's representation, and $c$ is the index of the class we want the output prediction for.
 
 Finally, $\theta = {\mathbf{w_1}, \mathbf{w_1}, ..., \mathbf{w_N}, \phi}$, and we are consistent with our previous notation.
 
 ## Learning a single initialization vector
-The first two variants of MAML - we look at - approach the initialization task by initializing the classification head weight vectors uniformly for all classes. In the paper
+The first two variants of MAML we look at approach the initialization task by initializing the classification head weight vectors identically for all classes. In the paper
 
 <p></p>
 <span>&nbsp;&nbsp;&nbsp;&#9654;&nbsp;&nbsp;</span>Han-Jia Ye & Wei-Lun Chao (ICLR, 2022) How to train your MAML to excel in few-shot classification <d-cite key="DBLP:conf/iclr/YeC22"></d-cite>,
@@ -155,7 +155,7 @@ For correctly dealing with the test examples during training, it could just reco
 and calculate the angle from the remembered canonical pose.\\
 This becomes a problem, when unseen objects are shown to the model during meta-testing. Here, it would be critical to infer
 the canonical pose form the training examples, to correctly infer the rotation angle for the test examples. This, however,
-is not learned by the model in this example.
+was not learned by the model in this example.
 
 When uniformly initializaing of the classification head for all classe, one forces the model to adapt during fine-tuning, 
 as otherwise it would predict only at chance level.
@@ -163,10 +163,10 @@ This prevents memorization overfitting.
 
 The approach is reported to perform on par with recent few-shot algorithms.
 
-Let's finally think of how to interpret UnicornMAML: When meta-learning only a single classification head vector, one could say that not a mapping from features to classes is tried to be learned any more, but a prioritization of features, which seemed to be more relevant for the classification decision across tasks, than others.
+Let's finally think of how to interpret UnicornMAML: When meta-learning only a single classification head vector, one could say, that rather than learning a mapping from features to classes, the weight vector instead learns a prioritization of those features that seem to be more relevant across tasks.
 
 ## Zero initialization
-The second approach for a uniform initialization is proposed in the paper
+The second approach for initializing weights identically for all classes is proposed in the paper
 
 <p></p>
 <span>&nbsp;&nbsp;&nbsp;&#9654;&nbsp;&nbsp;</span>Chia-Hsiang Kao et al. (ICLR, 2022) MAML is a Noisy Contrastive Learner in Classification <d-cite key="DBLP:conf/iclr/KaoCC22"></d-cite>.
@@ -188,8 +188,8 @@ An overview of MAML with the zeroing trick is displayed below:
 Note that $S_n$ and $Q_n$ refer to $\mathcal{D_{i}^{tr}}$ and $\mathcal{D_{i}^{test}}$ in this notation.
 
 Through applying the zero initialization, three of the problems addressed by UnicornMAML are solved as well:
-- MAML with the zeroing trick applied leads to random predictions before fine-tuning. This solves the problem of class
-label assignment permutations during testing.
+- MAML with the zeroing trick applied leads to random predictions before fine-tuning. This solves the problem caused by
+class label ordering permutations during testing.
 - Through the random predictions before fine-tuning, memorization overfitting is prevented as well.
 - The zeroing trick makes MAML applicable for datasets with a varying number of classes per task.
 
@@ -202,7 +202,7 @@ This is achieved by contrasting examples within a batch to each other. If two ex
 to increase their embeddings' similarity. If the label differs, it enforces the examples embedding similarity to decrease.
 The SCL loss contains an explicit similarity measure, which distinguishes it from supervised learning.
 
-More specifically, they show that the outer-loop update for the encoder follows a noisy SCL loss under the following assumptions:
+More specifically, Kao et al. [2022] <d-cite key="DBLP:conf/iclr/KaoCC22"></d-cite> show that, in MAML without the zeroing trick, the outer-loop update for the encoder follows a noisy SCL loss under the following assumptions:
 1. The encoder weights are frozen in the inner loop (EFIL assumption)
 2. There is only a single inner loop update step.<d-footnote>Note that FOMAML technically follows a noisy SCL loss without this assumption. However, when applying the zeroing trick, this assumption is needed again for stating that the encoder update is following an SCL loss</d-footnote>
 
@@ -222,7 +222,11 @@ $$
 
 $\mathbf{t}_1^{tr}$ refers to the one-hot encoded class label belonging to $\mathbf{x}_1^{tr}$. In words, the features extracted for training example $\mathbf{x}_1^{tr}$ are added to column $\mathbf{w}_c$, with $c$ being the index of 1 in $\mathbf{t}_1^{tr}$. For multiple examples, the features of all training examples labeled with class $c$ are added to the $c^{th}$ column of $\mathbf{w}$.
 
-Now, for calculating the model's output in the outer loop, the model computes the dot products of the columns $$ \\{\mathbf{w} \\}_{c=1}^N $$ and the encoded test examples $$ g_{\phi}(\mathbf{x}_1^{test}) $$ (and takes a softmax afterward.) To match the one-hot encoded label as good as possible, the dot product has to be large when $$ \mathbf{t}_1^{test} $$ = $$1$$ at index $$c$$, and small otherwise. We can see that the loss enforces embedding similarity for features from the same classes while enforcing dissimilarity for embeddings from different classes, which fits the SCL objective.
+Now, for calculating the model's output in the outer loop, the model computes the dot products of the columns $$ \\{\mathbf{w'} \\}_{c=1}^N $$ 
+and the encoded test examples $$ g_{\phi}(\mathbf{x}_1^{test}) $$.
+To match the one-hot encoded label as good as possible, the dot product has to be large when $$ \mathbf{t}_1^{test} $$ = $$1$$ at 
+index $$c$$, and small otherwise. We can see that the loss enforces embedding similarity for features from the same classes while enforcing 
+dissimilarity for embeddings from different classes, which fits the SCL objective.
 
 ## Initialization using prototypes
 A more sophisticated approach for last-layer initialization in MAML is introduced in the paper
@@ -231,7 +235,7 @@ A more sophisticated approach for last-layer initialization in MAML is introduce
 <span>&nbsp;&nbsp;&nbsp;&#9654;&nbsp;&nbsp;</span>Eleni Triantafillou et al. (ICLR, 2020) Meta-Dataset: A Dataset of Datasets for Learning to Learn from Few Examples <d-cite key="DBLP:conf/iclr/TriantafillouZD20"></d-cite> .
 <p></p>
 
-As one might guess from the name, <strong>Proto-MAML</strong> makes use of Prototypical Networks (PNs) for enhancing MAML. Opposite to the two initialization strategies presented above, Proto-MAML does not uniformly initialize the classification head weights before each inner loop for all classes. Instead, it calculates class-specific initialization vectors based on the training examples. This solves some of the problems mentioned earlier (see [Conclusion & Discussion](#conclusion--discussion)), but also it adds another type of logic to the classification layer.
+As one might guess from the name, <strong>Proto-MAML</strong> makes use of Prototypical Networks (PNs) for enhancing MAML. Unlike the two initialization strategies presented above, Proto-MAML does not force the classification head weights to be initialized identically for all classes before fine-tuning. Instead, it calculates class-specific initialization vectors based on the training examples. This solves some of the problems mentioned earlier (see [Conclusion & Discussion](#conclusion--discussion)), but also it adds another type of logic to the classification layer.
 
 Let's revise how PNs work when used for few-shot learning for understanding Proto-MAML afterward:
 
@@ -248,26 +252,28 @@ $$
 
 Note that the "test" superscripts on $\mathbf{x}$ are left out for clarity. $$−g_{\phi}(\mathbf{x})^{\top} g_{\phi}(\mathbf{x})$$ is disregarded here, as it's the same for all logits, and thus doesn't affect the output probabilities. When inspecting the left-over equation, we can see that it now has the shape of a linear classifier. More specifically, a linear classifier with weight vectors $$ \mathbf{w}_c = 2 \mathbf{c}_c^{\top} $$ and biases $$ b_c = \vert \vert \mathbf{c}_{c} \vert \vert^2 $$.
 
-Proceeding to Proto-MAML, Triantafillou et al. [2020] <d-cite key="DBLP:conf/iclr/TriantafillouZD20"></d-cite> adapt vanilla MAML by initializing the classification head using the prototype weights and biases, as just discussed. The initialization happens before the inner loop for each task, and the prototypes are computed by MAMLs own feature extractor. Afterward, the fine-tuning works as usual. Finally, when updating $\theta$ in the outer loop, the gradients flow also through the initialization of $$\mathbf{w}_c $$ and $$b_c$$, which is easy as they fully depend on $$ g_{\phi}(\mathbf{x})$$.
+Returning to Proto-MAML, Triantafillou et al. [2020] <d-cite key="DBLP:conf/iclr/TriantafillouZD20"></d-cite> adapt vanilla MAML by initializing the classification head using the prototype weights and biases, as just discussed. The initialization happens before the inner loop for each task, and the prototypes are computed by MAMLs own feature extractor. Afterward, the fine-tuning works as usual. Finally, when updating $\theta$ in the outer loop, the gradients flow also through the initialization of $$\mathbf{w}_c $$ and $$b_c$$, which is easy as they fully depend on $$ g_{\phi}(\mathbf{x})$$.
 
 Note that because of computational reasons, Triantafillou et al. [2020] <d-cite key="DBLP:conf/iclr/TriantafillouZD20"></d-cite> refer to Proto-MAML as (FO-)Proto-MAML.
 
 With Proto-MAML, one gets a task-specific, data-dependent initialization in a simple fashion, which seems super nice. For computing the model's output logits after classification head initialization, dot products between class prototypes and embedded examples are computed, which again seems very reasonable.
 
-One could argue that in the one-shot scenario, Proto-MAML doesn't learn that much in the inner loop beside the initialization itself. This happens as the dot product between an embedded training example and one class prototype (which equals the embedded training example itself for one class) will be disproportionately high. For a k-shot example, this effect might be less, but still, there is always one training example embedding within the prototype to compare. Following this thought, the training samples would rather provide a useful initialization of the final layer than a lot of parameter adaptation. One has to say that Proto-MAML performed quite well in the authors' experiments.
+One could argue that in the one-shot scenario, Proto-MAML doesn't learn that much in the inner loop beside the initialization itself. This happens as the dot product between an embedded training example and one class prototype (which equals the embedded training example itself for one class) will be disproportionately high. For a k-shot example, this effect might be less, but still, there is always one training example embedding within the prototype to compare. Following this thought, the training samples would rather provide a useful initialization of the final layer than a lot of parameter adaptation. 
+
+Proto-MAML mostly outperformed the approaches K-nearest neighbours, the finetune baseline, MatchingNet, ProtoNet, fo-MAML and RelationNet on sub-datasets of MetaDataset <d-cite key="DBLP:conf/iclr/TriantafillouZD20"></d-cite> like ILSVRC-2012 or Omniglot. 
 
 ## What else is there?
 Before proceeding to [Conclusion & Discussion](#conclusion--discussion), here are some pointers to methods that did not perfectly fit the topic but which are closely related:
 
-The first method worth mentioning is called Latent Embedding Optimization (LEO) <d-cite key="DBLP:conf/iclr/RusuRSVPOH19"></d-cite>. The authors encode the training data in a low dimensional subspace, from which model parameters $\theta$ can be generated. In the example presented, $\theta$ consists only of $\mathbf{w}$, so for the first inner-loop iteration, this would perfectly fit our initialization topic. The low dimensional code is generated using a feed-forward encoder, as well as a matching network. Using the matching network allows LEO to consider relations between the training examples of different classes. Very similar classes, for example, might require different decision boundaries than more distinct classes, hence the intuition.
+The first method worth mentioning is called Latent Embedding Optimization (LEO) <d-cite key="DBLP:conf/iclr/RusuRSVPOH19"></d-cite>. The authors encode the training data in a low dimensional subspace, from which model parameters $\theta$ can be generated. In the example presented, $\theta$ consists only of $\mathbf{w}$, so for the first inner-loop iteration, this would perfectly fit our initialization topic. The low dimensional code is generated using a feed-forward encoder, as well as a relation network. Using the relation network allows LEO to consider relations between the training examples of different classes. Very similar classes, for example, might require different decision boundaries than more distinct classes, hence the intuition.
 
 LEO deviates from the initialization scheme, however, as optimization is done in the low dimensional subspace and not on the model's parameters directly. It is stated that optimizing in a lower dimensional subspace helps in low-data regimes.
 
-Another related method is called MetaOptNet <d-cite key="DBLP:conf/cvpr/LeeMRS19"></d-cite>. In this approach, convex base learners, like support vector machines, are used as the classification head. Those can be optimized till convergence, which solves e.g., the problem of varying performance due to random class label assignments.
+Another related method is called MetaOptNet <d-cite key="DBLP:conf/cvpr/LeeMRS19"></d-cite>. In this approach, convex base learners, like support vector machines, are used as the classification head. Those can be optimized till convergence, which solves e.g., the problem of varying performance due to random class label orderings.
 
 ## Conclusion & Discussion
 To conclude, we've seen that a variety of problems can be tackled by using initialization strategies for MAMLs linear classification head, including:
-- Varying performance due to random class label assignments
+- Varying performance due to random class label orderings
 - Ability of MAML to work on datasets where the number of classes per task varies
 - Memorization overfitting
 - Cross-task interference
@@ -275,18 +281,20 @@ To conclude, we've seen that a variety of problems can be tackled by using initi
 
 Furthermore, for all the approaches presented, a decent gain in performance is reported in comparison to vanilla MAML. It seems, therefore, very reasonable to spend some time thinking about the last layer initialization.
 
-Looking at the problems mentioned and variants discussed in more detail, we can state that all the different variants make MAML <strong>permutation invariant with regard to class label assignments</strong>. UnicornMAML and the zeroing trick solve it by uniform initialization of $\mathbf{w}$. In Proto-MAML, the initialization happens with regard to the class label assignment, so it's permutation invariant as well.
+Looking at the problems mentioned and variants discussed in more detail, we can state that all the different variants make MAML <strong>permutation invariant with regard to class label orderings</strong>. UnicornMAML and the zeroing trick solve it by uniform initialization of $\mathbf{w}$. In Proto-MAML, the initialization adapts to the class label assignments, so it's permutation invariant as well.
 
 Also, all variants are compatible with <strong>datasets where the number of classes per task varies</strong>. In UnicornMAML, an arbitrary number of classification head vectors can be initialized with the single meta-learned classification head weight vector. When zero-initializing the classification head, the number of classes per task does not matter as well. In Proto-MAML, prototypes can be computed for an arbitrary number of classes, so again, the algorithm works on such a dataset without further adaption.
 
 Next, UnicornMAML and the zeroing trick solve <strong>memorization overfitting</strong>, again by initializing $\mathbf{w}$ uniformly for all classes. Proto-MAML solves memorization overfitting as well, as the task-specific initialization of $\mathbf{w}$ itself can be interpreted as fine-tuning.
 
-<strong>Cross-task interference</strong> and <strong>initialization interference</strong> are solved by the zeroing trick. For the other models, this is harder to say, as the derivations made by [Kao et al.](#Kao) are quite a case specific. Intuitively, Proto-MAML should solve cross-task interference, as the classification head is reinitialized after each task. Initialization interference is not solved by either ProtoMAML or UnicornMAML, as random initialization remains.
+<strong>Cross-task interference</strong> and <strong>initialization interference</strong> are solved by the zeroing trick. For the other methods, this is harder to say, as the derivations made by Kao et al. [2022] <d-cite key="DBLP:conf/iclr/KaoCC22"></d-cite> are quite a case specific. Intuitively, Proto-MAML should solve cross-task interference, as the classification head is reinitialized after each task. 
+Initialization interference is not solved by either ProtoMAML or UnicornMAML, as random initialization before the beginning of training remains.
 
-Note that in discussion with a reviewer, [Kao et al.](#kao) state that the main results they show are achieved by models which had the zeroing trick implemented but which didn't follow the EFIL assumption. They argue that using only the zeroing trick still enhances supervised contrastiveness. This kind of puts their whole theory into perspective, as without the EFIL assumption, MAML with the zeroing trick is neither an SCL algorithm nor a noisy SCL algorithm. Still, noticeable performance gains are reported though.
+Note that in discussion with a reviewer, Kao et al. [2022] <d-cite key="DBLP:conf/iclr/KaoCC22"></d-cite> state that the main results they show are achieved by models which had the zeroing trick implemented but which didn't follow the EFIL assumption. They argue that using only the zeroing trick still enhances supervised contrastiveness. This kind of puts their whole theory into perspective, as without the EFIL assumption, MAML with the zeroing trick is neither an SCL algorithm nor a noisy SCL algorithm. Still, noticeable performance gains are reported though.
 
 The question arises whether the whole theoretical background is needed or whether the zeroing tricks benefit is mainly the uniform initialization, like in UnicornMAML. It would be nice to see how the single learned initialization vector in UnicornMAML turns out to be shaped and how it compares to the zeroing trick. While the zeroing trick reduces cross-task noise and initialization noise, a single initialization vector can weight some features as more important than others for the final classification decision across tasks.
 
 In contrast to the uniform initialization approaches, we have seen Proto-MAML, where class-specific classification head vectors are computed for initialization based on the training data.
 
-Finally, Ye et al. [2022] <d-cite key="DBLP:conf/iclr/YeC22"></d-cite> compare the performance between Proto-MAML and UnicornMAML on MiniImageNet and TieredImageNet. UnicornMAML performs slightly better here in the one- and five-shot settings. Kao et al. [2020] <d-cite key="DBLP:conf/iclr/KaoCC22"></d-cite> do not report any particular numbers for their zeroing trick.
+Finally, Ye et al. [2022] <d-cite key="DBLP:conf/iclr/YeC22"></d-cite> compare the performance between Proto-MAML and UnicornMAML on MiniImageNet and TieredImageNet. UnicornMAML performs slightly better here in the one- and five-shot settings. 
+Kao et al. [2022] <d-cite key="DBLP:conf/iclr/KaoCC22"></d-cite> report that MAML with the zeroing-trick outperforms unmodified MAML on the mini-ImageNet and Omniglot datasets. They do not provide a benchmark score, however.
