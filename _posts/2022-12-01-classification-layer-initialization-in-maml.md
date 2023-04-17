@@ -47,7 +47,8 @@ toc:
 
 ## Introduction
 
-In a previous study, Raghu et al. [2020] <d-cite key="DBLP:conf/iclr/RaghuRBV20"></d-cite> found that in model-agnostic meta-learning (MAML) for few-shot classification, the majority of changes observed in the network during the inner loop fine-tuning process occurred in the linear classification head. It is commonly believed that during this phase, the linear head remaps encoded features to the classes of the new task. In traditional MAML, the weights of the final linear layer are meta-learned in the usual way. However, there are some issues with this approach:
+In a previous study, Raghu et al. [2020] <d-cite key="DBLP:conf/iclr/RaghuRBV20"></d-cite> found that in model-agnostic meta-learning (MAML) for few-shot classification, the majority of changes observed in the network during the inner loop fine-tuning process occurred in the linear classification head. It is commonly believed that during this phase, the linear head remaps encoded features to the classes of the new task. In
+traditional MAML, the weights of the final linear layer are meta-learned in the usual way. However, there are some issues with this approach:
 
 First, it is difficult to imagine that a single set of optimal weights can be learned. This becomes apparent when considering class label permutations: two different tasks may have the same classes but in a different order. As a result, the weights that perform well for the first task will likely not be effective for the second task. This is reflected in the fact that MAML's performance can vary by up to 15% depending on the class label assignments during testing <d-cite key="DBLP:conf/iclr/YeC22"></d-cite>.
 
@@ -59,12 +60,12 @@ This blog post will discuss different approaches to last layer initialization th
 
 ## What is Meta-Learning?
 
-Before diving into the topic, let's look at the general idea of meta-learning. In traditional, supervised machine learning, tasks are learned using a large number of labeled examples.
+Before diving into the topic, let's look at the general idea of meta-learning. In supervised machine learning, tasks are learned using a large number of labeled examples.
 Acquiring a sufficient amount of labeled data, however, can be labour extensive. Also, this approach to machine learning evidently deviates from the human learning process; a child is certainly
 able to learn what a specific object is, using only a few examples, and not hundreds or thousands.
-This is where meta-learning comes in. Its goal can be described as acquiring the ability to learn new tasks from only a few examples <d-cite key="9428530"></d-cite>
+This is where meta-learning comes in. Its goal can be described as acquiring the ability to learn new tasks from only a few examples <d-cite key="9428530"></d-cite>.
 
-There is not one fixed framework to meta-meta learning, however, a common approach is based on the principle, that train and test conditions must match <d-cite key="vinyals2016matching"></d-cite>.\\
+There is not one fixed framework to meta-meta learning, however, a common approach is based on the principle, that the conditions in which a model is trained and evaluated must match <d-cite key="vinyals2016matching"></d-cite>.\\
 Let's look at this in more detail, for the case of few-shot classification. Here, the meta-learning goal
 can be verbalized as "learning to learn new classes from few examples" <d-cite key="DBLP:conf/iclr/TriantafillouZD20"></d-cite>. When evaluating a meta-learner, one needs a training set $$
 \mathcal{D^{tr}} = ((\mathbf{x}_1, y_1), (\mathbf{x}_2, y_2), (\mathbf{x}_3, y_3), ...)$$, consisting of labeled examples for unseen classes.
@@ -73,8 +74,9 @@ Those are used by the meta-learner to adapt to the novel task. How well the meta
 as an episode or a task: $\mathcal{T} = (\mathcal{D^{tr}}, \mathcal{D^{test}})$.
 
 For matching the conditions for training and evaluation, one would split all available classes with their examples into a dateset for meta-training $$\mathcal{C}_{train}$$ and a dataset for 
-meta-testing $$\mathcal{C}_{test}$$. Tasks are then drawn from those datasets, for either training or testing purposes. A possible approach for training phase could be: Fine-tune the meta-learner
-using $$\mathcal{D^{tr}}$$, evaluate its performance on $$\mathcal{D^{test}}$$, and finally update the model based on the evaluation error. 
+meta-testing $$\mathcal{C}_{test}$$. Tasks are then drawn from those datasets, for either training or testing purposes.\\
+A possible approach for using a task in the training phase could be: Fine-tune the meta-learner
+using $$\mathcal{D^{tr}}$$, evaluate its performance on $$\mathcal{D^{test}}$$, and finally update the model based on this evaluation error. 
 
 ## Quick recap on MAML
 Model-Agnostic Meta-Learning (MAML) <d-cite key="DBLP:conf/icml/FinnAL17"></d-cite> is a well-established algorithm in the field of optimization-based meta-learning. Its goal is to find parameters $\theta$ for a parametric model $f_{\theta}$ that can be efficiently adapted to perform an unseen task from the same task distribution, using only a few training examples. The pre-training of $\theta$ is done using two nested loops (bi-level optimization), with meta-training occurring in the outer loop and task-specific fine-tuning in the inner loop. The task-specific fine-tuning is typically done using a few steps of gradient descent:
@@ -147,13 +149,13 @@ Yin et al. [2020] <d-cite key="DBLP:conf/iclr/YinTZLF20"></d-cite> illustrate me
 where each task consists of 2D pictures of a certain object. The objects are rotated by some angle from an (unknown) canonical pose in every picture.
 Each picture is labelled by the angle, by which the object is rotated from the objects canonical pose.
 
-In a memorization overfitting scenario, a model 
-would memorize the canonical pose of all the objects shown during training. 
-This way, the model doesn't need to adapt anymore during fine-tuning in the meta-training phase. It could just recognize which object it is looking at,
+In a memorization overfitting scenario, a model  learns and memorizes the canonical pose of all the objects shown during training. 
+This way, the model doesn't need to adapt anymore during fine-tuning in the meta-training phase.
+For correctly dealing with the test examples during training, it could just recognize which object it is looking at,
 and calculate the angle from the remembered canonical pose.\\
 This becomes a problem, when unseen objects are shown to the model during meta-testing. Here, it would be critical to infer
-the canonical pose form the training examples to correctly infer the rotation angle for the test examples. This, however,
-was not learned by the model in this example.
+the canonical pose form the training examples, to correctly infer the rotation angle for the test examples. This, however,
+is not learned by the model in this example.
 
 When uniformly initializaing of the classification head for all classe, one forces the model to adapt during fine-tuning, 
 as otherwise it would predict only at chance level.
