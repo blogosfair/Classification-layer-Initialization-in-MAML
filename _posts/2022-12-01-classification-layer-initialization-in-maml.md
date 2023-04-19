@@ -177,6 +177,8 @@ Kao et al. [2022] <d-cite key="DBLP:conf/iclr/KaoCC22"></d-cite> modify the orig
 An overview of MAML with the zeroing trick is displayed below:
 
 
+{% include figure.html path="assets/html/2022-12-01-classification-layer-initialization-in-maml/algorithm.html"%}
+
 
 {% include figure.html path="assets/img/2022-12-01-classification-layer-initialization-in-maml/zeroing_trick.png" class="img-fluid" %}
 
