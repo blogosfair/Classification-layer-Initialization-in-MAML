@@ -148,18 +148,17 @@ This leads to a model that learns to perform the training tasks but also to a mo
 
 Yin et al. [2020] <d-cite key="DBLP:conf/iclr/YinTZLF20"></d-cite> illustrate memorization overfitting using a simple example: Imagine a 3D pose prediction problem,
 where each task consists of 2D pictures of a certain object. The objects are rotated by some angle from an (unknown) canonical pose in every picture.
-Each picture is labelled by the angle, by which the object is rotated from the objects canonical pose.
+Each picture is labeled by the angle by which the object is rotated from the object's canonical pose.
 
-In a memorization overfitting scenario, a model  learns and memorizes the canonical pose of all the objects shown during training. 
-This way, the model doesn't need to adapt anymore during fine-tuning in the meta-training phase.
-For correctly dealing with the test examples during training, it could just recognize which object it is looking at,
-and calculate the angle from the remembered canonical pose.\\
-This becomes a problem, when unseen objects are shown to the model during meta-testing. Here, it would be critical to infer
-the canonical pose form the training examples, to correctly infer the rotation angle for the test examples. This, however,
+In a memorization overfitting scenario, a model learns and memorizes the canonical pose of all the objects shown during training. 
+This way, the model no longer needs to adapt during fine-tuning in the meta-training phase.
+For correctly dealing with the test examples during training, it could just recognize which object it is looking at and calculate the angle from the remembered canonical pose.\\
+This becomes a problem when unseen objects are shown to the model during meta-testing. Here, it would be critical to infer
+the canonical pose from the training examples to correctly infer the rotation angle for the test examples. This, however,
 was not learned by the model in this example.
 
-When uniformly initializaing of the classification head for all classe, one forces the model to adapt during fine-tuning, 
-as otherwise it would predict only at chance level.
+When uniformly initializing the classification head for all classes, we force the model to adapt during fine-tuning, 
+as otherwise, it would predict only at the chance level.
 This prevents memorization overfitting.
 
 The approach is reported to perform on par with recent few-shot algorithms.
