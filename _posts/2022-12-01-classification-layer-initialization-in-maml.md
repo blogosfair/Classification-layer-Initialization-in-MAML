@@ -60,21 +60,22 @@ This blog post will discuss different approaches to last layer initialization th
 
 ## What is Meta-Learning?
 
+
 Before diving into the topic, let's look at the general idea of meta-learning. In supervised machine learning, tasks are learned using a large number of labeled examples.
-Acquiring a sufficient amount of labeled data, however, can be labour extensive. Also, this approach to machine learning evidently deviates from the human learning process; a child is certainly
+However, acquiring a sufficient amount of labeled data can be labor extensive. Also, this approach to machine learning evidently deviates from the human learning process; a child is certainly
 able to learn what a specific object is, using only a few examples, and not hundreds or thousands.
 This is where meta-learning comes in. Its goal can be described as acquiring the ability to learn new tasks from only a few examples <d-cite key="9428530"></d-cite>.
 
-There is not one fixed framework to meta-meta learning, however, a common approach is based on the principle, that the conditions in which a model is trained and evaluated must match <d-cite key="vinyals2016matching"></d-cite>.\\
-Let's look at this in more detail, for the case of few-shot classification. Here, the meta-learning goal
+There is not one fixed framework for meta-learning; however, a common approach is based on the principle that the conditions in which a model is trained and evaluated must match <d-cite key="vinyals2016matching"></d-cite>.\\
+Let's look at this in more detail for the case of few-shot classification, which can be solved with meta-learning. Here, the meta-learning goal
 can be verbalized as "learning to learn new classes from few examples" <d-cite key="DBLP:conf/iclr/TriantafillouZD20"></d-cite>. When evaluating a meta-learner, one needs a training set $$
 \mathcal{D^{tr}} = ((\mathbf{x}_1, y_1), (\mathbf{x}_2, y_2), (\mathbf{x}_3, y_3), ...)$$, consisting of labeled examples for unseen classes.
-Those are used by the meta-learner to adapt to the novel task. How well the meta-learner performs, can then be evaluated on labeled examples from the same classes: $$
+Those are used by the meta-learner to adapt to the novel task. How well the meta-learner performs can then be evaluated on labeled examples from the same classes: $$
 \mathcal{D^{test}} = ((\mathbf{x}_{1}^{\ast}, y_{1}^{\ast}), (\mathbf{x}_{2}^{\ast}, y_{2}^{\ast}), (\mathbf{x}_{3}^{\ast}, y_{3}^{\ast}), ...)$$. The combination of such a training and test set is referred to
 as an episode or a task: $\mathcal{T} = (\mathcal{D^{tr}}, \mathcal{D^{test}})$.
 
-For matching the conditions for training and evaluation, one would split all available classes with their examples into a dateset for meta-training $$\mathcal{C}_{train}$$ and a dataset for 
-meta-testing $$\mathcal{C}_{test}$$. Tasks are then drawn from those datasets, for either training or testing purposes.\\
+To match the conditions for training and evaluation, one would split all available classes with their examples into a dataset for meta-training $$\mathcal{C}_{train}$$ and a dataset for 
+meta-testing $$\mathcal{C}_{test}$$. Tasks are then drawn from those datasets for either training or testing purposes.\\
 A possible approach for using a task in the training phase could be: Fine-tune the meta-learner
 using $$\mathcal{D^{tr}}$$, evaluate its performance on $$\mathcal{D^{test}}$$, and finally update the model based on this evaluation error. 
 
