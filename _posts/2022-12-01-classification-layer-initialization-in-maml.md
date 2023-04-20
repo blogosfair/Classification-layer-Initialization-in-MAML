@@ -157,11 +157,13 @@ This becomes a problem when unseen objects are shown to the model during meta-te
 the canonical pose from the training examples to correctly infer the rotation angle for the test examples. This, however,
 was not learned by the model in this example.
 
-When uniformly initializing the classification head for all classes, we force the model to adapt during fine-tuning, 
+When initializing the classification head identically for all classes, we force the model to adapt during fine-tuning, 
 as otherwise, it would predict only at the chance level.
 This prevents memorization overfitting.
 
-The approach is reported to perform on par with recent few-shot algorithms.
+Ye & Chao [2022] <d-cite key="DBLP:conf/iclr/YeC22"></d-cite> benchmark UnicornMAML on MiniImageNet and TieredImageNet.
+In the five-shot setting, the approach is claimed to outperform ProtoNet, ProtoMAML, MetaOptNet, MTL+E3BM, RFS-Distill, DeepEMD, MATE+MetaOpt
+DSN-MR and FEAT. In the one-shot setting, UnicornMAML is reported to perform averagely compared with the other methods.
 
 Let's finally think of how to interpret UnicornMAML: When meta-learning only a single classification head vector, one could say, that rather than learning a mapping from features to classes, the weight vector instead learns a prioritization of those features that seem to be more relevant across tasks.
 
@@ -188,7 +190,8 @@ An overview of MAML with the zeroing trick is displayed below:
 Note that $S_n$ and $Q_n$ refer to $\mathcal{D_{i}^{tr}}$ and $\mathcal{D_{i}^{test}}$ in this notation.
 
 Through applying the zero initialization, three of the problems addressed by UnicornMAML are solved as well:
-- MAML with the zeroing trick applied leads to random predictions before fine-tuning. This solves the problem caused by
+- MAML with the zeroing trick applied leads to random predictions before fine-tuning. This happens, as zeroing the whole classification head
+is also a form of identical weight initialization for all classes. Thus, the zeroing trick solves the problem caused by
 class label ordering permutations during testing.
 - Through the random predictions before fine-tuning, memorization overfitting is prevented as well.
 - The zeroing trick makes MAML applicable for datasets with a varying number of classes per task.
@@ -260,7 +263,7 @@ With Proto-MAML, one gets a task-specific, data-dependent initialization in a si
 
 One could argue that in the one-shot scenario, Proto-MAML doesn't learn that much in the inner loop beside the initialization itself. This happens as the dot product between an embedded training example and one class prototype (which equals the embedded training example itself for one class) will be disproportionately high. For a k-shot example, this effect might be less, but still, there is always one training example embedding within the prototype to compare. Following this thought, the training samples would rather provide a useful initialization of the final layer than a lot of parameter adaptation. 
 
-Proto-MAML mostly outperformed the approaches K-nearest neighbours, the finetune baseline, MatchingNet, ProtoNet, fo-MAML and RelationNet on sub-datasets of MetaDataset <d-cite key="DBLP:conf/iclr/TriantafillouZD20"></d-cite> like ILSVRC-2012 or Omniglot. 
+Proto-MAML is claimed to outperform the approaches K-nearest neighbours, the finetune baseline, MatchingNet, ProtoNet, fo-MAML and RelationNet on most sub-datasets of MetaDataset <d-cite key="DBLP:conf/iclr/TriantafillouZD20"></d-cite>, like ILSVRC-2012 or Omniglot. 
 
 ## What else is there?
 Before proceeding to [Conclusion & Discussion](#conclusion--discussion), here are some pointers to methods that did not perfectly fit the topic but which are closely related:
@@ -285,16 +288,16 @@ Looking at the problems mentioned and variants discussed in more detail, we can 
 
 Also, all variants are compatible with <strong>datasets where the number of classes per task varies</strong>. In UnicornMAML, an arbitrary number of classification head vectors can be initialized with the single meta-learned classification head weight vector. When zero-initializing the classification head, the number of classes per task does not matter as well. In Proto-MAML, prototypes can be computed for an arbitrary number of classes, so again, the algorithm works on such a dataset without further adaption.
 
-Next, UnicornMAML and the zeroing trick solve <strong>memorization overfitting</strong>, again by initializing $\mathbf{w}$ uniformly for all classes. Proto-MAML solves memorization overfitting as well, as the task-specific initialization of $\mathbf{w}$ itself can be interpreted as fine-tuning.
+Next, UnicornMAML and the zeroing trick solve <strong>memorization overfitting</strong>, again by initializing $\mathbf{w}$ identically for all classes. Proto-MAML solves memorization overfitting as well, as the task-specific initialization of $\mathbf{w}$ itself can be interpreted as fine-tuning.
 
 <strong>Cross-task interference</strong> and <strong>initialization interference</strong> are solved by the zeroing trick. For the other methods, this is harder to say, as the derivations made by Kao et al. [2022] <d-cite key="DBLP:conf/iclr/KaoCC22"></d-cite> are quite a case specific. Intuitively, Proto-MAML should solve cross-task interference, as the classification head is reinitialized after each task. 
-Initialization interference is not solved by either ProtoMAML or UnicornMAML, as random initialization before the beginning of training remains.
+Initialization interference is not solved by either ProtoMAML or UnicornMAML, as random initialization before the beginning of meta-training remains.
 
 Note that in discussion with a reviewer, Kao et al. [2022] <d-cite key="DBLP:conf/iclr/KaoCC22"></d-cite> state that the main results they show are achieved by models which had the zeroing trick implemented but which didn't follow the EFIL assumption. They argue that using only the zeroing trick still enhances supervised contrastiveness. This kind of puts their whole theory into perspective, as without the EFIL assumption, MAML with the zeroing trick is neither an SCL algorithm nor a noisy SCL algorithm. Still, noticeable performance gains are reported though.
 
-The question arises whether the whole theoretical background is needed or whether the zeroing tricks benefit is mainly the uniform initialization, like in UnicornMAML. It would be nice to see how the single learned initialization vector in UnicornMAML turns out to be shaped and how it compares to the zeroing trick. While the zeroing trick reduces cross-task noise and initialization noise, a single initialization vector can weight some features as more important than others for the final classification decision across tasks.
+The question arises whether the whole theoretical background is needed or whether the zeroing tricks benefit is mainly the identical initialization for all classes, like in UnicornMAML. It would be nice to see how the single learned initialization vector in UnicornMAML turns out to be shaped and how it compares to the zeroing trick. While the zeroing trick reduces cross-task noise and initialization noise, a single initialization vector can weight some features as more important than others for the final classification decision across tasks.
 
 In contrast to the uniform initialization approaches, we have seen Proto-MAML, where class-specific classification head vectors are computed for initialization based on the training data.
 
-Finally, Ye et al. [2022] <d-cite key="DBLP:conf/iclr/YeC22"></d-cite> compare the performance between Proto-MAML and UnicornMAML on MiniImageNet and TieredImageNet. UnicornMAML performs slightly better here in the one- and five-shot settings. 
+Finally, Ye & Chao [2022] <d-cite key="DBLP:conf/iclr/YeC22"></d-cite> compare the performance between Proto-MAML and UnicornMAML on MiniImageNet and TieredImageNet. UnicornMAML performs slightly better here in the one- and five-shot settings. 
 Kao et al. [2022] <d-cite key="DBLP:conf/iclr/KaoCC22"></d-cite> report that MAML with the zeroing-trick outperforms unmodified MAML on the mini-ImageNet and Omniglot datasets. They do not provide a benchmark score, however.
