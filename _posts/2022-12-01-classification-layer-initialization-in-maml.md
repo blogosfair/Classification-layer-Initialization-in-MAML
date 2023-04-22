@@ -140,7 +140,7 @@ This collapses the models meta-parameters to $ \theta = \\{\mathbf{w}, \phi\\} $
 <em>Fig.2 Overview of UnicornMAML <d-cite key="DBLP:conf/iclr/YeC22"></d-cite>. We can see that class label permutations don't matter anymore, as before fine-tuning, the probability of predicting each class is the same.</em>
 </p>
 
-This tweak to vanilla MAML makes UnicornMAML permutation invariant, as models fine-tuned on tasks including the same categories - just differently ordered - will now yield the same output predictions. Also, the method could be used with datasets where the number of classes varies without any further adaptation: It doesn't matter how many classification head weight vectors are initialized by the single meta-classification head weight vector.
+This tweak to vanilla MAML makes UnicornMAML permutation invariant, as models fine-tuned on tasks including the same categories - just differently ordered - will now yield the same output predictions. Also, the method could be used with more challenging datasets where the number of classes varies without any further adaptation: It doesn't matter how many classification head weight vectors are initialized by the single meta-classification head weight vector.
 
 Furthermore, the uniform initialization in Unicorn-MAML addresses the problem of memorization overfitting <d-cite key="DBLP:conf/iclr/YinTZLF20"></d-cite>. 
 The phenomenon describes a scenario where a single model can learn all the training tasks only from the test data in the outer loop. 
@@ -157,7 +157,7 @@ This becomes a problem when unseen objects are shown to the model during meta-te
 the canonical pose from the training examples to correctly infer the rotation angle for the test examples. This, however,
 was not learned by the model in this example.
 
-When initializing the classification head identically for all classes, we force the model to adapt during fine-tuning, 
+When initializing the classification head identically for all classes, the model is forced to adapt during fine-tuning, 
 as otherwise, it would predict only at the chance level.
 This prevents memorization overfitting.
 
@@ -210,9 +210,11 @@ More specifically, Kao et al. [2022] <d-cite key="DBLP:conf/iclr/KaoCC22"></d-ci
 2. There is only a single inner loop update step.<d-footnote>Note that FOMAML technically follows a noisy SCL loss without this assumption. However, when applying the zeroing trick, this assumption is needed again for stating that the encoder update is following an SCL loss</d-footnote>
 
 A noisy SCL loss means that cases can occur where the loss forces the model to maximize similarities between embeddings from samples of different classes. The outer-loop encoder loss in this setting contains an "interference term" which causes the model to pull together embeddings from different tasks or to pull embeddings into a random direction, with the randomness being introduced by random initialization of the classification head. Those two phenomena are termed *cross-task interference*
-and *initialization interference*. Noise and interference in the loss vanish when applying the zeroing trick, and the outer-loop encoder loss turns into a proper SCL loss. Meaning that minimizing this loss forces embeddings of the same class/task together while pushing embeddings from the same task and different classes apart. A decent increase in performance is observed for MAML with the zeroing trick compared to vanilla MAML.
+and *initialization interference*. Noise and interference in the loss vanish when applying the zeroing trick, and the outer-loop encoder loss turns into a proper SCL loss. Meaning that minimizing this loss forces embeddings of the same class/task together while pushing embeddings from the same task and different classes apart. 
 
 Those findings are derived using a general formulation of MAML, with a cross-entropy loss, and the details are available in the paper <d-cite key="DBLP:conf/iclr/KaoCC22"></d-cite>. Also, a slightly simpler example is stated to give an intuition of MAMLs SCL properties. We will briefly summarize it in the following to share this intuition with you. 
+
+In experiments on the mini-ImageNet and Omniglot datasets, a decent increase in performance is reported for MAML with the zeroing trick compared to vanilla MAML.
 
 ### MAMLs SCL Intuition
 To get an intuition of how MAML relates to SCL, let's look at the following setup: an N-way one-shot classification task using MAML with Mean Squared Error (MSE) between the one-hot encoded class label and the prediction of the model. Furthermore, the EFIL assumption is made, the zeroing trick is applied, only a single inner loop update step is used, and only a single task is sampled per batch.
