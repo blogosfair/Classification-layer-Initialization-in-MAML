@@ -187,8 +187,6 @@ An overview of MAML with the zeroing trick is displayed below:
 <em>Fig.3 MAML with the zeroing trick applied <d-cite key="DBLP:conf/iclr/KaoCC22"></d-cite>.</em>
 </p>
 
-Note that $S_n$ and $Q_n$ refer to $\mathcal{D_{i}^{tr}}$ and $\mathcal{D_{i}^{test}}$ in this notation.
-
 Through applying the zero initialization, three of the problems addressed by UnicornMAML are solved as well:
 - MAML with the zeroing trick applied leads to random predictions before fine-tuning. This happens, as zeroing the whole classification head
 is also a form of identical weight initialization for all classes. Thus, the zeroing trick solves the problem caused by
