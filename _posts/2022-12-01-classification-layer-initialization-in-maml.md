@@ -11,7 +11,7 @@ htmlwidgets: true
 #  - name: Anonymous 
 
 # do not fill this in until your post is accepted and you're publishing your camera-ready post!
-# authors:
+authors:
    - name: Nys Tjade Siegel
      url: "https://www.linkedin.com/in/nys-tjade-siegel-b06a1718a?originalSubdomain=de"
      affiliations:
