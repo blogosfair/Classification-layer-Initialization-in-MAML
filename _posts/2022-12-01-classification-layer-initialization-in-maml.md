@@ -56,7 +56,7 @@ Second, more challenging datasets are being proposed as few-shot learning benchm
 
 Therefore, it seems logical to consider how to initialize the final classification layer before fine-tuning on a new task. Random initialization may not be optimal, as it can introduce unnecessary noise <d-cite key="DBLP:conf/iclr/KaoCC22"></d-cite>. 
 
-This blog post will discuss different approaches to last layer initialization that claim to outperform the original MAML method.
+This blog post will discuss different approaches to the last layer initialization that claim to outperform the original MAML method.
 
 ## What is Meta-Learning?
 
@@ -103,7 +103,7 @@ Before proceeding, let's prepare ourselves for the next sections by looking at t
 Finally, $\theta = {\mathbf{w_1}, \mathbf{w_1}, ..., \mathbf{w_N}, \phi}$, and we are consistent with our previous notation.
 
 ## Learning a single initialization vector
-The first two variants of MAML we look at approach the initialization task by initializing the classification head weight vectors identically for all classes. In the paper
+The first two variants of MAML - we look at - approach the initialization task by initializing the classification head weight vectors identically for all classes. In the paper
 
 <p></p>
 <span>&nbsp;&nbsp;&nbsp;&#9654;&nbsp;&nbsp;</span>Han-Jia Ye & Wei-Lun Chao (ICLR, 2022) How to train your MAML to excel in few-shot classification <d-cite key="DBLP:conf/iclr/YeC22"></d-cite>,
@@ -116,7 +116,7 @@ an approach called <strong>UnicornMAML</strong> is presented. It is explicitly m
 {% include figure.html path="assets/img/2022-12-01-classification-layer-initialization-in-maml/perm_final.png" class="img-fluid" %}
 
 <p align = "center">
-<em>Fig.1 Example of MAML and a class label permutation <d-cite key="DBLP:conf/iclr/YeC22"></d-cite>. We can see the randomness introduced, as $\mathbf{w_1}$ is supposed to interpret the input features as "unicorn" for the first task, and as "bee" for the second. For both tasks, the class outputted as a prediction should be the same, as in human perception, both tasks are identical. This, however, is obviously not the case.</em>
+<em>Fig.1 Example of MAML and a class label permutation <d-cite key="DBLP:conf/iclr/YeC22"></d-cite>. We can see the randomness introduced, as $\mathbf{w_1}$ is supposed to interpret the input features as "unicorn" for the first task and as "bee" for the second. For both tasks, the class outputted as a prediction should be the same, as in human perception, both tasks are identical. This, however, is obviously not the case.</em>
 </p>
 
 The solution proposed is fairly simple: Instead of meta-learning $N$ weight vectors for the final layer, only a <ins>single vector</ins> $\mathbf{w}$ is meta-learned and used to initialize all $ \\{ \mathbf{w} \\}_{c=1}^N $ before the fine-tuning stage.
@@ -154,7 +154,7 @@ In a memorization overfitting scenario, a model learns and memorizes the canonic
 This way, the model no longer needs to adapt during fine-tuning in the meta-training phase.
 For correctly dealing with the test examples during training, it could just recognize which object it is looking at and calculate the angle from the remembered canonical pose.\\
 This becomes a problem when unseen objects are shown to the model during meta-testing. Here, it would be critical to infer
-the canonical pose from the training examples to correctly infer the rotation angle for the test examples. This, however,
+the canonical pose from the training examples to infer the rotation angle for the test examples correctly. This, however,
 was not learned by the model in this example.
 
 When initializing the classification head identically for all classes, the model is forced to adapt during fine-tuning, 
@@ -165,7 +165,7 @@ Ye & Chao [2022] <d-cite key="DBLP:conf/iclr/YeC22"></d-cite> benchmark UnicornM
 In the five-shot setting, the approach is claimed to outperform ProtoNet, ProtoMAML, MetaOptNet, MTL+E3BM, RFS-Distill, DeepEMD, MATE+MetaOpt
 DSN-MR and FEAT. In the one-shot setting, UnicornMAML is reported to perform averagely compared with the other methods.
 
-Let's finally think of how to interpret UnicornMAML: When meta-learning only a single classification head vector, one could say, that rather than learning a mapping from features to classes, the weight vector instead learns a prioritization of those features that seem to be more relevant across tasks.
+Let's finally think of how to interpret UnicornMAML: When meta-learning only a single classification head vector, one could say that rather than learning a mapping from features to classes, the weight vector instead learns a prioritization of those features that seem to be more relevant across tasks.
 
 ## Zero initialization
 The second approach for initializing weights identically for all classes is proposed in the paper
@@ -188,7 +188,7 @@ An overview of MAML with the zeroing trick is displayed below:
 </p>
 
 Through applying the zero initialization, three of the problems addressed by UnicornMAML are solved as well:
-- MAML with the zeroing trick applied leads to random predictions before fine-tuning. This happens, as zeroing the whole classification head
+- MAML, with the zeroing trick applied, leads to random predictions before fine-tuning. This happens as zeroing the whole classification head
 is also a form of identical weight initialization for all classes. Thus, the zeroing trick solves the problem caused by
 class label ordering permutations during testing.
 - Through the random predictions before fine-tuning, memorization overfitting is prevented as well.
@@ -227,7 +227,7 @@ $\mathbf{t}_1^{tr}$ refers to the one-hot encoded class label belonging to $\mat
 
 Now, for calculating the model's output in the outer loop, the model computes the dot products of the columns $$ \\{\mathbf{w'} \\}_{c=1}^N $$ 
 and the encoded test examples $$ g_{\phi}(\mathbf{x}_1^{test}) $$.
-To match the one-hot encoded label as good as possible, the dot product has to be large when $$ \mathbf{t}_1^{test} $$ = $$1$$ at 
+To match the one-hot encoded label as well as possible, the dot product has to be large when $$ \mathbf{t}_1^{test} $$ = $$1$$ at 
 index $$c$$, and small otherwise. We can see that the loss enforces embedding similarity for features from the same classes while enforcing 
 dissimilarity for embeddings from different classes, which fits the SCL objective.
 
@@ -243,9 +243,9 @@ As one might guess from the name, <strong>Proto-MAML</strong> makes use of Proto
 Let's revise how PNs work when used for few-shot learning for understanding Proto-MAML afterward:
 
 Class prototypes $$\mathbf{c}_{c}$$ are computed by averaging over train example embeddings of each class, created by a feature extractor $$g_{\phi}(\mathbf{x})$$.
-For classifying a test example, a softmax over the distances (e.g., squared euclidean distance) between class prototypes $$ \mathbf{c}_{c} $$ and example embeddings $$g_{\phi}(\mathbf{x}^{test})$$ is used, to generate probabilities for each class.
+For classifying a test example, a softmax over the distances (e.g., squared Euclidean distance) between class prototypes $$ \mathbf{c}_{c} $$ and example embeddings $$g_{\phi}(\mathbf{x}^{test})$$ is used, to generate probabilities for each class.
 
-When using the squared euclidean distance, the model's output logits are expressed as:
+When using the squared Euclidean distance, the model's output logits are expressed as:
 
 $$ 
 \begin{align*}
@@ -263,16 +263,16 @@ With Proto-MAML, one gets a task-specific, data-dependent initialization in a si
 
 One could argue that in the one-shot scenario, Proto-MAML doesn't learn that much in the inner loop beside the initialization itself. This happens as the dot product between an embedded training example and one class prototype (which equals the embedded training example itself for one class) will be disproportionately high. For a k-shot example, this effect might be less, but still, there is always one training example embedding within the prototype to compare. Following this thought, the training samples would rather provide a useful initialization of the final layer than a lot of parameter adaptation. 
 
-Proto-MAML is claimed to outperform the approaches K-nearest neighbours, the finetune baseline, MatchingNet, ProtoNet, fo-MAML and RelationNet on most sub-datasets of MetaDataset <d-cite key="DBLP:conf/iclr/TriantafillouZD20"></d-cite>, like ILSVRC-2012 or Omniglot. 
+Proto-MAML is claimed to outperform the approaches, K-nearest neighbours, the fine-tune baseline, MatchingNet, ProtoNet, fo-MAML and RelationNet on most sub-datasets of MetaDataset <d-cite key="DBLP:conf/iclr/TriantafillouZD20"></d-cite>, like ILSVRC-2012 or Omniglot. 
 
 ## What else is there?
 Before proceeding to [Conclusion & Discussion](#conclusion--discussion), here are some pointers to methods that did not perfectly fit the topic but which are closely related:
 
-The first method worth mentioning is called Latent Embedding Optimization (LEO) <d-cite key="DBLP:conf/iclr/RusuRSVPOH19"></d-cite>. The authors encode the training data in a low dimensional subspace, from which model parameters $\theta$ can be generated. In the example presented, $\theta$ consists only of $\mathbf{w}$, so for the first inner-loop iteration, this would perfectly fit our initialization topic. The low dimensional code is generated using a feed-forward encoder, as well as a relation network. Using the relation network allows LEO to consider relations between the training examples of different classes. Very similar classes, for example, might require different decision boundaries than more distinct classes, hence the intuition.
+The first method worth mentioning is called Latent Embedding Optimization (LEO) <d-cite key="DBLP:conf/iclr/RusuRSVPOH19"></d-cite>. The authors encode the training data in a low dimensional subspace, from which model parameters $\theta$ can be generated. In the example presented, $\theta$ consists only of $\mathbf{w}$, so for the first inner-loop iteration, this would perfectly fit our initialization topic. The low-dimensional code is generated using a feed-forward encoder, as well as a relation network. Using the relation network allows LEO to consider relations between the training examples of different classes. Very similar classes, for example, might require different decision boundaries than more distinct classes, hence the intuition.
 
 LEO deviates from the initialization scheme, however, as optimization is done in the low dimensional subspace and not on the model's parameters directly. It is stated that optimizing in a lower dimensional subspace helps in low-data regimes.
 
-Another related method is called MetaOptNet <d-cite key="DBLP:conf/cvpr/LeeMRS19"></d-cite>. In this approach, convex base learners, like support vector machines, are used as the classification head. Those can be optimized till convergence, which solves e.g., the problem of varying performance due to random class label orderings.
+Another related method is called MetaOptNet <d-cite key="DBLP:conf/cvpr/LeeMRS19"></d-cite>. In this approach, convex base learners, like support vector machines, are used as the classification head. Those can be optimized till convergence, which solves, e.g., the problem of varying performance due to random class label orderings.
 
 ## Conclusion & Discussion
 To conclude, we've seen that a variety of problems can be tackled by using initialization strategies for MAMLs linear classification head, including:
