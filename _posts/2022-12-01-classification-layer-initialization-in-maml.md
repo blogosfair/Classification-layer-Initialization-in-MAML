@@ -7,23 +7,23 @@ date: 2022-12-01
 htmlwidgets: true
 
 # anonymize when submitting 
-authors:
-  - name: Anonymous
+# authors:
+#  - name: Anonymous 
 
 # do not fill this in until your post is accepted and you're publishing your camera-ready post!
 # authors:
-#   - name: Albert Einstein
-#     url: "https://en.wikipedia.org/wiki/Albert_Einstein"
-#     affiliations:
-#       name: IAS, Princeton
-#   - name: Boris Podolsky
-#     url: "https://en.wikipedia.org/wiki/Boris_Podolsky"
-#     affiliations:
-#       name: IAS, Princeton
-#   - name: Nathan Rosen
-#     url: "https://en.wikipedia.org/wiki/Nathan_Rosen"
-#     affiliations:
-#       name: IAS, Princeton 
+   - name: Nys Tjade Siegel
+     url: "https://www.linkedin.com/in/nys-tjade-siegel-b06a1718a?originalSubdomain=de"
+     affiliations:
+       name: TU Berlin
+   - name: Thomas Goerttler
+     url: "https://scholar.google.de/citations?user=ppQIwpIAAAAJ&hl=de"
+     affiliations:
+       name: TU Berlin
+   - name: Klaus Obermayer
+     url: "https://www.tu.berlin/ni/"
+     affiliations:
+       name: TU Berlin
 
 # must be the exact same name as your blogpost
 bibliography: 2022-12-01-classification-layer-initialization-in-maml.bib  
