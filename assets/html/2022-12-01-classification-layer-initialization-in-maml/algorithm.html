@@ -166,14 +166,19 @@
 <a 
  id="x1-1doc"></a>
  <div class="caption" 
-><span class="id">Algorithm: </span><span  
+><span class="id">Algorithm: </span>
+
+<span  
 class="content">Second-order MAML with the zeroing trick</span></div><!--tex4ht:label?: x1-2r1 -->
 &#x00A0;       <span 
 class="ptmb7t-">Require</span>: Task distribution <span 
-class="cmmi-10">D </span><br 
+class="cmmi-10">p</span><span 
+class="cmr-10">(</span><span 
+class="cmmi-10">T</span><span 
+class="cmr-10">) </span><br 
 class="newline" />&#x00A0;       <span 
 class="ptmb7t-">Require</span>: <span 
-class="cmmi-10">&#x03B7;,&#x03C1;</span>: inner loop and outer loop learning rates<br 
+class="cmmi-10">&#x03B1;,&#x03B7;</span>: inner loop and meta-learning rates<br 
 class="newline" />&#x00A0;       <span 
 class="ptmb7t-">Require</span>: Randomly initialized base-model parameters <span 
 class="cmmi-10">&#x03B8; </span><div class="algorithmic">
@@ -197,7 +202,10 @@ class="cmmi-10">T</span><sub><span
 class="cmmi-7">N</span><sub><span 
 class="cmmi-5">batch</span></sub></sub><span 
 class="cmsy-10">} </span>from <span 
-class="cmmi-10">D</span>        </span><br class="algorithmic"/><span class="label-11.99997pt">  <span 
+class="cmmi-10">p</span><span 
+class="cmr-10">(</span><span 
+class="cmmi-10">T</span><span 
+class="cmr-10">)</span>        </span><br class="algorithmic"/><span class="label-11.99997pt">  <span 
 class="ptmr7t-x-x-90">4:</span> </span>&#xA0;<span  class="algorithmic">       <span 
 class="ptmb7t-">for</span>&#x00A0;<span 
 class="cmmi-10">i </span><span 
@@ -243,16 +251,18 @@ class="cmsy-10">&#x2190; </span><span
 class="cmmi-10">&#x03B8;</span><sub><span 
 class="cmmi-7">i</span></sub> <span 
 class="cmsy-10">- </span><span 
-class="cmmi-10">&#x03B7;</span><span 
+class="cmmi-10">&#x03B1;</span><span 
 class="cmsy-10">&#x2207;</span><sub><span 
 class="cmmi-7">&#x03B8;</span><sub><span 
 class="cmmi-5">i</span></sub></sub><span 
-class="cmmi-10">L</span><sub><span 
-class="cmmi-7">&#x03B8;</span><sub><span 
-class="cmmi-5">i</span></sub><span 
-class="cmmi-7">,D</span><sub><span 
-class="cmmi-5">i</span></sub><sup><span 
-class="cmmi-5">tr</span></sup></sub>        </span><br class="algorithmic"/><span class="label-11.99997pt">  <span 
+class="cmmi-10">L</span><span 
+class="cmr-10">(</span><span 
+class="cmmi-10">&#x03B8;</span><sub><span 
+class="cmmi-7">i</span></sub><span 
+class="cmmi-10">,D</span><sub><span 
+class="cmmi-7">i</span></sub><sup><span 
+class="cmmi-7">tr</span></sup><span 
+class="cmr-10">)</span>        </span><br class="algorithmic"/><span class="label-11.99997pt">  <span 
 class="ptmr7t-x-x-90">9:</span> </span>&#xA0;<span  class="algorithmic">             <span 
 class="ptmb7t-">end</span>&#x00A0;<span 
 class="ptmb7t-">for</span>        </span><br class="algorithmic"/><span class="label-11.99997pt"> <span 
@@ -264,20 +274,22 @@ class="cmmi-10">&#x03B8; </span><span
 class="cmsy-10">&#x2190; </span><span 
 class="cmmi-10">&#x03B8; </span><span 
 class="cmsy-10">- </span><span 
-class="cmmi-10">&#x03C1;</span><span 
-class="cmex-10">&#x2211;</span>   <sub style="margin-left: -12px;"><span 
+class="cmmi-10">&#x03B7;</span><span 
+class="cmsy-10">&#x2207;</span><sub><span 
+class="cmmi-7">&#x03B8;</span></sub> <span 
+class="cmex-10">&#x2211;</span>   <sub style="margin-left: -12px;" ><span 
 class="cmmi-7">i</span><span 
 class="cmr-7">=1</span></sub><sup style="margin-left: -12px;"><span 
 class="cmmi-7">N</span><sub><span 
 class="cmmi-5">batch</span></sub></sup><span 
-class="cmsy-10">&#x2207;</span><sub> <span 
-class="cmmi-7">&#x03B8;</span></sub><span 
-class="cmmi-10">L</span><sub><span 
-class="cmmi-7">&#x03B8;</span><sub><span 
-class="cmmi-5">n</span></sub><span 
-class="cmmi-7">,D</span><sub><span 
-class="cmmi-5">i</span></sub><sup><span 
-class="cmmi-5">test</span></sup></sub>        </span><br class="algorithmic"/><span class="label-11.99997pt"> <span 
+class="cmmi-10">L</span><span 
+class="cmr-10">(</span><span 
+class="cmmi-10">&#x03B8;</span><sub> <span 
+class="cmmi-7">i</span></sub><span 
+class="cmmi-10">,D</span><sub><span 
+class="cmmi-7">i</span></sub><sup><span 
+class="cmmi-7">test</span></sup><span 
+class="cmr-10">)</span>        </span><br class="algorithmic"/><span class="label-11.99997pt"> <span 
 class="ptmr7t-x-x-90">12:</span> </span>&#xA0;<span  class="algorithmic">       <span id="textcolor2">Set <span 
 class="cmbx-10">w </span><span 
 class="cmsy-10">&#x2190; </span><span 
@@ -286,6 +298,8 @@ class="ptmr7t-x-x-90">13:</span> </span>&#xA0;<span  class="algorithmic"><span
 class="ptmb7t-">end</span>&#x00A0;<span 
 class="ptmb7t-">while</span></span>
 <!--l. 39--><p class="noindent" ></div>
+
+
                                    
                                                                             
 </div><hr class="endfloat" />
