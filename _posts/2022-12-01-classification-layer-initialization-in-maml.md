@@ -38,7 +38,7 @@ toc:
   - name: Learning a single initialization vector
   - name: Zero initialization
     subsections:
-      - name: MAMLs SCL Intuition
+      - name: MAML's SCL Intuition
   - name: Initialization using prototypes
   - name: What else is there?
   - name: Conclusion & Discussion
@@ -109,7 +109,7 @@ The first two variants of MAML - we look at - approach the initialization task b
 <span>&nbsp;&nbsp;&nbsp;&#9654;&nbsp;&nbsp;</span>Han-Jia Ye & Wei-Lun Chao (ICLR, 2022) How to train your MAML to excel in few-shot classification <d-cite key="DBLP:conf/iclr/YeC22"></d-cite>,
 <p></p>
 
-an approach called <strong>UnicornMAML</strong> is presented. It is explicitly motivated by the effect that different class-label assignments can have. Ye & Chao [2022] <d-cite key="DBLP:conf/iclr/YeC22"></d-cite> report that during testing, vanilla MAML can perform very differently for <ins>tasks with the same set of classes</ins>, which are just <ins>differently ordered</ins>. Namely, they report that classification accuracy can vary up to 15% in the one-shot setting and up to 8% in the five-shot setting. This makes MAMLs performance quite unstable.
+an approach called <strong>UnicornMAML</strong> is presented. It is explicitly motivated by the effect that different class-label assignments can have. Ye & Chao [2022] <d-cite key="DBLP:conf/iclr/YeC22"></d-cite> report that during testing, vanilla MAML can perform very differently for <ins>tasks with the same set of classes</ins>, which are just <ins>differently ordered</ins>. Namely, they report that classification accuracy can vary up to 15% in the one-shot setting and up to 8% in the five-shot setting. This makes MAML's performance quite unstable.
 <br/><br/>
 
 
@@ -210,11 +210,11 @@ More specifically, Kao et al. [2022] <d-cite key="DBLP:conf/iclr/KaoCC22"></d-ci
 A noisy SCL loss means that cases can occur where the loss forces the model to maximize similarities between embeddings from samples of different classes. The outer-loop encoder loss in this setting contains an "interference term" which causes the model to pull together embeddings from different tasks or to pull embeddings into a random direction, with the randomness being introduced by random initialization of the classification head. Those two phenomena are termed *cross-task interference*
 and *initialization interference*. Noise and interference in the loss vanish when applying the zeroing trick, and the outer-loop encoder loss turns into a proper SCL loss. Meaning that minimizing this loss forces embeddings of the same class/task together while pushing embeddings from the same task and different classes apart. 
 
-Those findings are derived using a general formulation of MAML, with a cross-entropy loss, and the details are available in the paper <d-cite key="DBLP:conf/iclr/KaoCC22"></d-cite>. Also, a slightly simpler example is stated to give an intuition of MAMLs SCL properties. We will briefly summarize it in the following to share this intuition with you. 
+Those findings are derived using a general formulation of MAML, with a cross-entropy loss, and the details are available in the paper <d-cite key="DBLP:conf/iclr/KaoCC22"></d-cite>. Also, a slightly simpler example is stated to give an intuition of MAML's SCL properties. We will briefly summarize it in the following to share this intuition with you. 
 
 In experiments on the mini-ImageNet and Omniglot datasets, a decent increase in performance is reported for MAML with the zeroing trick compared to vanilla MAML.
 
-### MAMLs SCL Intuition
+### MAML's SCL Intuition
 To get an intuition of how MAML relates to SCL, let's look at the following setup: an N-way one-shot classification task using MAML with Mean Squared Error (MSE) between the one-hot encoded class label and the prediction of the model. Furthermore, the EFIL assumption is made, the zeroing trick is applied, only a single inner loop update step is used, and only a single task is sampled per batch.
 
 In this setting, the classification heads inner-loop update for a single datapoint looks like this:
@@ -255,7 +255,7 @@ $$
 
 Note that the "test" superscripts on $\mathbf{x}$ are left out for clarity. $$−g_{\phi}(\mathbf{x})^{\top} g_{\phi}(\mathbf{x})$$ is disregarded here, as it's the same for all logits, and thus doesn't affect the output probabilities. When inspecting the left-over equation, we can see that it now has the shape of a linear classifier. More specifically, a linear classifier with weight vectors $$ \mathbf{w}_c = 2 \mathbf{c}_c^{\top} $$ and biases $$ b_c = \vert \vert \mathbf{c}_{c} \vert \vert^2 $$.
 
-Returning to Proto-MAML, Triantafillou et al. [2020] <d-cite key="DBLP:conf/iclr/TriantafillouZD20"></d-cite> adapt vanilla MAML by initializing the classification head using the prototype weights and biases, as just discussed. The initialization happens before the inner loop for each task, and the prototypes are computed by MAMLs own feature extractor. Afterward, the fine-tuning works as usual. Finally, when updating $\theta$ in the outer loop, the gradients flow also through the initialization of $$\mathbf{w}_c $$ and $$b_c$$, which is easy as they fully depend on $$ g_{\phi}(\mathbf{x})$$.
+Returning to Proto-MAML, Triantafillou et al. [2020] <d-cite key="DBLP:conf/iclr/TriantafillouZD20"></d-cite> adapt vanilla MAML by initializing the classification head using the prototype weights and biases, as just discussed. The initialization happens before the inner loop for each task, and the prototypes are computed by MAML's own feature extractor. Afterward, the fine-tuning works as usual. Finally, when updating $\theta$ in the outer loop, the gradients flow also through the initialization of $$\mathbf{w}_c $$ and $$b_c$$, which is easy as they fully depend on $$ g_{\phi}(\mathbf{x})$$.
 
 Note that because of computational reasons, Triantafillou et al. [2020] <d-cite key="DBLP:conf/iclr/TriantafillouZD20"></d-cite> refer to Proto-MAML as (FO-)Proto-MAML.
 
@@ -263,7 +263,7 @@ With Proto-MAML, one gets a task-specific, data-dependent initialization in a si
 
 One could argue that in the one-shot scenario, Proto-MAML doesn't learn that much in the inner loop beside the initialization itself. This happens as the dot product between an embedded training example and one class prototype (which equals the embedded training example itself for one class) will be disproportionately high. For a k-shot example, this effect might be less, but still, there is always one training example embedding within the prototype to compare. Following this thought, the training samples would rather provide a useful initialization of the final layer than a lot of parameter adaptation. 
 
-Proto-MAML is claimed to outperform the approaches, K-nearest neighbours, the fine-tune baseline, MatchingNet, ProtoNet, fo-MAML and RelationNet on most sub-datasets of MetaDataset <d-cite key="DBLP:conf/iclr/TriantafillouZD20"></d-cite>, like ILSVRC-2012 or Omniglot. 
+Proto-MAML is claimed to outperform the approaches, K-nearest neighbours, Finetune, MatchingNet, ProtoNet, fo-MAML and RelationNet on most sub-datasets of MetaDataset <d-cite key="DBLP:conf/iclr/TriantafillouZD20"></d-cite>, like ILSVRC-2012 or Omniglot. 
 
 ## What else is there?
 Before proceeding to [Conclusion & Discussion](#conclusion--discussion), here are some pointers to methods that did not perfectly fit the topic but which are closely related:
@@ -275,7 +275,7 @@ LEO deviates from the initialization scheme, however, as optimization is done in
 Another related method is called MetaOptNet <d-cite key="DBLP:conf/cvpr/LeeMRS19"></d-cite>. In this approach, convex base learners, like support vector machines, are used as the classification head. Those can be optimized till convergence, which solves, e.g., the problem of varying performance due to random class label orderings.
 
 ## Conclusion & Discussion
-To conclude, we've seen that a variety of problems can be tackled by using initialization strategies for MAMLs linear classification head, including:
+To conclude, we've seen that a variety of problems can be tackled by using initialization strategies for MAML's linear classification head, including:
 - Varying performance due to random class label orderings
 - Ability of MAML to work on datasets where the number of classes per task varies
 - Memorization overfitting
